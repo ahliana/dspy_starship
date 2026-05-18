@@ -1,0 +1,40 @@
+{
+  "traces": [],
+  "train": [],
+  "demos": [
+    {
+      "augmented": true,
+      "transmission": "Minor cabin pressure fluctuation detected.",
+      "urgency": "attention"
+    },
+    {
+      "transmission": "Main bus B undervolt, immediate response required.",
+      "urgency": "urgent"
+    },
+    {
+      "transmission": "Routine status check, all systems nominal.",
+      "urgency": "routine"
+    }
+  ],
+  "signature": {
+    "instructions": "Classify a mission transmission by urgency.",
+    "fields": [
+      {
+        "prefix": "Transmission:",
+        "description": "${transmission}"
+      },
+      {
+        "prefix": "Urgency:",
+        "description": "One of: routine, attention, urgent"
+      }
+    ]
+  },
+  "lm": null,
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.13",
+      "dspy": "3.2.1",
+      "cloudpickle": "3.1"
+    }
+  }
+}

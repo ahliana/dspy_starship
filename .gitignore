@@ -1,0 +1,20 @@
+.env
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+.DS_Store
+*.swp
+*.log
+
+# Speaker-only files, not part of the public repo
+CLAUDE.md
+TIMELINE.md
+SPEAKER_NOTES.md
+dspy_pyhou_slides.pptx
+backups/
+qr_codes/
+scripts/execute_notebook.py
+scripts/update_pptx_placeholders.py
+scripts/generate_qrs.py

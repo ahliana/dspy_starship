@@ -1112,7 +1112,7 @@ MIPROv2 evaluates on a validation set. Non-determinism (e.g., LM-judge metric wi
 
 ---
 
-## Cell 12 (Sunday-prep, skipped)
+## Cell 12 (Sunday-prep, pre-run before the talk)
 
 ### What's on screen
 A try/except block that runs MIPROv2 with BootstrapFewShotWithRandomSearch as fallback, saves to `miprov2_artifact.json`.

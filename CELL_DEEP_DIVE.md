@@ -504,6 +504,8 @@ flowchart TB
         R5 --> R2
         R3 -->|no| R6[Answer]
     end
+    P3 ~~~ C1
+    C4 ~~~ R1
 ```
 
 Same signature works in any of the three. The module decides whether to think, call tools, or just answer.

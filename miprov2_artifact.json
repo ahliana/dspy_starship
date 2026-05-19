@@ -8,6 +8,7 @@
       "urgency": "attention"
     },
     {
+      "augmented": true,
       "transmission": "Main bus B undervolt, immediate response required.",
       "urgency": "urgent"
     },

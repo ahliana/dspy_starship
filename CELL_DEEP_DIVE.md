@@ -1212,19 +1212,3 @@ No, the talk is humans-only. The demos use DSPy live. The audience cards became 
 The setup and signature stuff (cells 1-6) won't work without an LM. But you can read the code and the saved outputs on GitHub for free - the notebook is committed with all outputs from a real run.
 
 ---
-
-## Talking points you can drop at any moment
-
-- "I never wrote a prompt. The library wrote it for me, from my signature."
-- "Signatures say WHAT. Modules say HOW. Optimizers make them better."
-- "I edit signatures. I never edit prompts."
-- "Five tokens. The whole program."
-- "You bring the examples and the metric. DSPy does the prompt engineering."
-- "Houston, we have a [whatever]. (Apollo 13 callback)"
-- "The library decided the simplest sufficient prompt is the best one."
-
-## If you get a question you don't know
-
-"Honest answer, I don't know off the top. Here's how I'd find out: [check dspy docs / look at source / try it]. Anyone in the room have experience?"
-
-That's a Mission Control move. Pass the comms to someone who knows.

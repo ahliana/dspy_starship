@@ -10,7 +10,6 @@ Talk delivered at PyHou on July 21, 2026. This repo is the take-home artifact.
 
 | File | What it is |
 |---|---|
-| `CATCHUP.md` | Summary for the speaker (Ahliana) to remember what this project is |
 | `CLAUDE.md` | Master instructions for Claude Code |
 | `TIMELINE.md` | The locked 40-minute talk breakdown plus 10 min Q&A |
 | `SPEAKER_NOTES.md` | What to say at each cell and slide |
@@ -61,5 +60,9 @@ The submitted meetup description promises five things. Every deliverable in this
 - PyHou Discord: [add link]
 - LinkedIn: [add link]
 - Recording on TechTalk YouTube: [link after upload]
+
+## License
+
+MIT. See [LICENSE](LICENSE).
 
 Built for PyHou at Improving Houston.

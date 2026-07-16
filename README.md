@@ -4,13 +4,10 @@
 
 Talk delivered at PyHou on July 21, 2026. This repo is the take-home artifact.
 
-**If you are Claude Code**: read `CLAUDE.md` FIRST. Then `TIMELINE.md`. Then this README.
-
 ## What is here
 
 | File | What it is |
 |---|---|
-| `CLAUDE.md` | Master instructions for Claude Code |
 | `TIMELINE.md` | The locked 40-minute talk breakdown plus 10 min Q&A |
 | `SPEAKER_NOTES.md` | What to say at each cell and slide |
 | `dspy_starship_01.ipynb` | The notebook that IS the talk, walked through live. Fully annotated for self-study. Start here |
@@ -22,7 +19,6 @@ Talk delivered at PyHou on July 21, 2026. This repo is the take-home artifact.
 | `scripts/execute_notebook.py` | Runs the notebook end-to-end, saves offline backup |
 | `requirements.txt` | Pinned dependencies |
 | `.env.example` | Copy to `.env`, uncomment your `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` |
-| `CLAUDE_CODE_BOOTSTRAP.md` | The prompt the speaker used to drive Claude Code during prep |
 
 ## Quick start
 

@@ -43,7 +43,7 @@ Full minute-by-minute breakdown in `TIMELINE.md`.
 
 | File | Purpose |
 |---|---|
-| `CATCHUP.md` | User's summary to remember the project |
+| `CATCHUP.md` | User's summary to remember the project (kept locally, not committed to the repo) |
 | `CLAUDE.md` | This file. Master instructions |
 | `TIMELINE.md` | The 40+10 talk breakdown |
 | `SPEAKER_NOTES.md` | What Ahliana will say |

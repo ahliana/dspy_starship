@@ -22,16 +22,22 @@ Talk delivered at PyHou on July 21, 2026. This repo is the take-home artifact.
 | `scripts/run_miprov2.py` | Compiles the sophisticated optimizer artifact |
 | `scripts/execute_notebook.py` | Runs the notebook end-to-end, saves offline backup |
 | `requirements.txt` | Pinned dependencies |
-| `.env.example` | Copy to `.env`, add your `ANTHROPIC_API_KEY` |
+| `.env.example` | Copy to `.env`, uncomment your `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` |
+| `CLAUDE_CODE_BOOTSTRAP.md` | The prompt the speaker used to drive Claude Code during prep |
 
 ## Quick start
 
 ```
 python -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
 python scripts/setup.py
-python scripts/run_miprov2.py
-python scripts/execute_notebook.py
+```
+
+Optional, since the compiled artifact and the offline backup already ship with the repo:
+
+```
+python scripts/run_miprov2.py      # rebuild miprov2_artifact.json (5-10 min)
+python scripts/execute_notebook.py # rebuild backups/full_demo.ipynb
 ```
 
 Then open `dspy_starship_01.ipynb` in Jupyter. It runs on either an Anthropic or an OpenAI key: put whichever one you have in `.env` and the first cell picks the right models.

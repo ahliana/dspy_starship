@@ -13,6 +13,7 @@ Run this ONCE. It will:
 Usage:
     python scripts/setup.py
 """
+import os
 import sys
 import subprocess
 import shutil
@@ -51,36 +52,44 @@ def install_requirements():
 
 def ensure_env_file():
     if ENV_FILE.exists():
-        contents = ENV_FILE.read_text()
-        if "your-anthropic-api-key-here" in contents:
-            print("WARNING: .env still contains the placeholder API key.")
-            print("Edit .env and set ANTHROPIC_API_KEY=sk-ant-... before running anything else.")
-            return False
-        if "ANTHROPIC_API_KEY=" not in contents:
-            print("WARNING: .env does not contain ANTHROPIC_API_KEY")
-            return False
-        print("OK: .env exists with a real key")
-        return True
+        keys = {}
+        for line in ENV_FILE.read_text().splitlines():
+            if "=" in line and not line.strip().startswith("#"):
+                name, _, value = line.partition("=")
+                keys[name.strip()] = value.strip()
+        real = [k for k in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY")
+                if keys.get(k) and not keys[k].startswith("your-")]
+        if real:
+            print(f"OK: .env has a real key ({', '.join(real)})")
+            return True
+        print("WARNING: .env has no real key yet.")
+        print("Edit .env and set ANTHROPIC_API_KEY or OPENAI_API_KEY.")
+        return False
     if ENV_EXAMPLE.exists():
         shutil.copy(ENV_EXAMPLE, ENV_FILE)
         print("Copied .env.example to .env")
-        print("WARNING: Edit .env and set ANTHROPIC_API_KEY before running anything else.")
+        print("WARNING: Edit .env and set ANTHROPIC_API_KEY or OPENAI_API_KEY before running anything else.")
         return False
     print(f"ERROR: Neither {ENV_FILE} nor {ENV_EXAMPLE} found")
     return False
 
 
 def smoke_test():
-    """Verify DSPy + Anthropic talk to each other."""
+    """Verify DSPy talks to whichever provider has a key."""
     print("Running smoke test...")
     try:
         from dotenv import load_dotenv
         load_dotenv(ENV_FILE)
         import dspy
-        lm = dspy.LM("anthropic/claude-haiku-4-5-20251001", max_tokens=200)
+        anthropic_key = os.getenv("ANTHROPIC_API_KEY", "")
+        if anthropic_key and not anthropic_key.startswith("your-"):
+            model = "anthropic/claude-haiku-4-5-20251001"
+        else:
+            model = "openai/gpt-4o-mini"
+        lm = dspy.LM(model, max_tokens=200)
         dspy.configure(lm=lm)
-        result = dspy.Predict("question -> answer")(question="What city houses NASA Mission Control?")
-        print(f"OK: smoke test answer: {result.answer[:100]}")
+        result = dspy.Predict("question -> answer")(question="What year was DSPy released?")
+        print(f"OK: smoke test ({model}) answer: {result.answer[:100]}")
         return True
     except Exception as e:
         print(f"ERROR: smoke test failed: {e}")
@@ -102,8 +111,9 @@ def main():
             print("=" * 60)
             print()
             print("Next steps:")
-            print("  1. python scripts/run_miprov2.py  (30-45 min for MIPROv2)")
-            print("  2. python scripts/execute_notebook.py  (offline backup)")
+            print("  1. Open dspy_starship_01.ipynb in Jupyter and run it top to bottom")
+            print("  2. Optional: python scripts/run_miprov2.py  (5-10 min; a compiled artifact already ships with the repo)")
+            print("  3. Optional: python scripts/execute_notebook.py  (rebuild the offline backup)")
             return 0
     print()
     print("Setup incomplete. Fix the issues above and re-run.")

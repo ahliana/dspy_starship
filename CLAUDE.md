@@ -47,13 +47,15 @@ Full minute-by-minute breakdown in `TIMELINE.md`.
 | `CLAUDE.md` | This file. Master instructions |
 | `TIMELINE.md` | The 40+10 talk breakdown |
 | `SPEAKER_NOTES.md` | What Ahliana will say |
-| `dspy_starship.ipynb` | The notebook that IS the talk, walked through live |
+| `dspy_starship_01.ipynb` | The notebook that IS the talk, walked through live |
+| `slides.html` | The 10-slide deck, self-contained, opened in a browser tab |
+| `METHOD.md` | The workflow write-up, promise 5's "method" take-home |
 | `scripts/setup.py` | Environment setup, Python not bash |
-| `scripts/run_miprov2.py` | Compiles MIPROv2 artifact (30-45 min), or BSRS fallback |
-| `scripts/execute_notebook.py` | Runs notebook end-to-end, saves offline backup |
+| `scripts/run_miprov2.py` | Compiles MIPROv2 artifact (5-10 min, heavy mode), or BSRS fallback |
+| `scripts/execute_notebook.py` | Runs the notebook end-to-end, saves offline backup |
 | `requirements.txt` | Pinned dependencies |
-| `.env.example` | Template for ANTHROPIC_API_KEY |
-| `miprov2_artifact.json` | Produced by run_miprov2.py (do not commit if it leaks prompts) |
+| `.env.example` | Template; uncomment ANTHROPIC_API_KEY or OPENAI_API_KEY |
+| `miprov2_artifact.json` | Compiled artifact, committed on purpose (synthetic data only) |
 | `backups/full_demo.ipynb` | Offline fallback with all outputs preserved |
 
 ## Style preferences (NON-NEGOTIABLE)
@@ -111,7 +113,7 @@ If it prints an answer, DSPy works. If not, report the exact error.
 python scripts/run_miprov2.py
 ```
 
-Takes 30 to 45 minutes for MIPROv2. If MIPROv2 errors, falls back to BootstrapFewShotWithRandomSearch (5 to 10 min). Produces `miprov2_artifact.json`.
+Takes 5 to 10 minutes for MIPROv2 (heavy mode, Sonnet proposer, Haiku task model). If MIPROv2 errors, falls back to BootstrapFewShotWithRandomSearch (5 to 10 min). Produces `miprov2_artifact.json`. A compiled artifact already ships with the repo, so this is a rebuild step, not a prerequisite.
 
 TELL the user how long it will take BEFORE starting. Let it run in the background.
 
@@ -130,7 +132,8 @@ Replace `[your-handle]` in `README.md`, notebook markdown cells, and any other f
 ### Task 8: Final verification
 
 Confirm these files exist and are non-empty:
-- `dspy_starship.ipynb`
+- `dspy_starship_01.ipynb`
+- `slides.html`
 - `miprov2_artifact.json`
 - `backups/full_demo.ipynb`
 - `.env` (with real key)

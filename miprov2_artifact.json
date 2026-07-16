@@ -4,21 +4,74 @@
   "demos": [
     {
       "augmented": true,
-      "transmission": "Minor cabin pressure fluctuation detected.",
+      "transmission": "Unidentified vibration of unknown origin, investigating.",
       "urgency": "attention"
     },
     {
       "augmented": true,
-      "transmission": "Main bus B undervolt, immediate response required.",
+      "transmission": "Planned software update installed successfully, systems nominal.",
+      "urgency": "routine"
+    },
+    {
+      "augmented": true,
+      "transmission": "Morning status check, all systems nominal.",
+      "urgency": "routine"
+    },
+    {
+      "transmission": "Faint odor reported near the galley, source not yet identified.",
+      "urgency": "attention"
+    },
+    {
+      "transmission": "Crew sleep shift change logged, all normal.",
+      "urgency": "routine"
+    },
+    {
+      "transmission": "Fuel pressure trending low but still within limits, watching.",
+      "urgency": "attention"
+    },
+    {
+      "transmission": "Scheduled fire drill completed, all crew accounted for.",
+      "urgency": "routine"
+    },
+    {
+      "transmission": "Confirmed toxic fumes in the crew cabin, evacuating to the safe module.",
       "urgency": "urgent"
     },
     {
-      "transmission": "Routine status check, all systems nominal.",
+      "transmission": "Main bus B undervolt confirmed, switching to backup now.",
+      "urgency": "urgent"
+    },
+    {
+      "transmission": "Unusual telemetry pattern, cause unclear, gathering more data.",
+      "urgency": "attention"
+    },
+    {
+      "transmission": "Structural crack confirmed spreading on the truss, crew to the safe zone.",
+      "urgency": "urgent"
+    },
+    {
+      "transmission": "Daily science experiment completed on schedule.",
+      "urgency": "routine"
+    },
+    {
+      "transmission": "Confirmed loss of main power, running on reserve batteries now.",
+      "urgency": "urgent"
+    },
+    {
+      "transmission": "Possible sensor fault causing erratic temperature readings, assessing.",
+      "urgency": "attention"
+    },
+    {
+      "transmission": "Comms static increasing, cause not yet determined, investigating.",
+      "urgency": "attention"
+    },
+    {
+      "transmission": "Airlock leak-check test passed within nominal limits.",
       "urgency": "routine"
     }
   ],
   "signature": {
-    "instructions": "Classify a mission transmission by urgency.",
+    "instructions": "Classify the urgency level of a spacecraft transmission as \"urgent,\" \"attention,\" or \"routine.\" Urgent messages begin with \"Confirmed\" and describe active crises requiring immediate response. Attention messages use hedging language (e.g., \"suspected,\" \"possible,\" \"intermittent\") and end with investigative actions (e.g., \"monitoring,\" \"assessing\"). Routine messages use declarative, past-tense language indicating normal operations. Output only the urgency label.",
     "fields": [
       {
         "prefix": "Transmission:",

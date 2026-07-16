@@ -1,8 +1,10 @@
 dspy-ai>=3.2.0
+litellm>=1.64.0,<1.92
+optuna>=3.0
 anthropic>=0.40.0
 pydantic>=2.0
+matplotlib
 jupyter
 nbformat
 nbclient
 python-dotenv
-optuna>=4.0

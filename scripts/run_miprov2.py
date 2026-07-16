@@ -1,18 +1,23 @@
 """
 run_miprov2.py
 
-Sunday prep. Compiles a sophisticated optimizer artifact for the talk.
-Tries MIPROv2 first (30-45 min). If MIPROv2 errors, falls back to
-BootstrapFewShotWithRandomSearch (5-10 min).
+Compiles the sophisticated optimizer artifact for the talk. Run this BEFORE
+the talk (Sunday-equivalent prep). Tries MIPROv2 first. If MIPROv2 errors
+(for example, the optional 'optuna' dependency is missing), falls back to
+BootstrapFewShotWithRandomSearch.
 
-Either way, produces miprov2_artifact.json at the repo root.
-Cell 11 of the notebook loads this file during the live talk.
+Either way, produces miprov2_artifact.json at the repo root. The MIPROv2 half
+of cell 12 in the notebook loads this file during the live talk.
+
+On the confirmed-vs-suspected task with Haiku 4.5 as the task model and Sonnet
+4.6 as the instruction proposer, the heavy MIPROv2 run scores 100% on the
+held-out test set and writes the labeling convention out as an instruction.
 
 Usage:
     python scripts/run_miprov2.py
 
-This is a long-running script. Let it run in the background while you do
-other prep. Approximate cost on Haiku 4.5: $1 to $3.
+Wall-clock is roughly 5 to 10 minutes on the settings below. Measured cost is
+under $1. Let it run in the background while you do other prep.
 """
 import os
 import sys
@@ -26,51 +31,99 @@ ENV_FILE = REPO_ROOT / ".env"
 ARTIFACT = REPO_ROOT / "miprov2_artifact.json"
 
 
+def build_data(dspy):
+    """Return (trainset, valset). Convention: confirmed threat = urgent;
+    suspected / unconfirmed / in-tolerance = attention; normal, drill, test,
+    or completed = routine."""
+    def ex(t, u):
+        return dspy.Example(transmission=t, urgency=u).with_inputs("transmission")
+
+    train = [
+        ex("Confirmed cabin depressurization, crew on emergency oxygen.", "urgent"),
+        ex("Main bus B undervolt confirmed, switching to backup now.", "urgent"),
+        ex("Confirmed hull breach in module three, sealing bulkheads now.", "urgent"),
+        ex("Fire confirmed in the galley, suppression activated, crew evacuating.", "urgent"),
+        ex("Confirmed ammonia leak in the cooling loop, crew donning masks.", "urgent"),
+        ex("Reactor temperature confirmed past the red line, emergency shutdown started.", "urgent"),
+        ex("Confirmed loss of main power, running on reserve batteries now.", "urgent"),
+        ex("Collision confirmed, debris impact in ninety seconds, brace.", "urgent"),
+        ex("Confirmed oxygen leak, cabin pressure falling now, masks on.", "urgent"),
+        ex("Engine overpressure confirmed, shutting down the affected thruster.", "urgent"),
+        ex("Confirmed toxic fumes in the crew cabin, evacuating to the safe module.", "urgent"),
+        ex("Water intrusion confirmed in the avionics bay, powering down affected units.", "urgent"),
+        ex("Confirmed runaway heater, temperature climbing fast, cutting power now.", "urgent"),
+        ex("Structural crack confirmed spreading on the truss, crew to the safe zone.", "urgent"),
+        ex("Suspected coolant leak, still confirming whether it is real.", "attention"),
+        ex("Unidentified vibration of unknown origin, investigating.", "attention"),
+        ex("Possible sensor fault causing erratic temperature readings, assessing.", "attention"),
+        ex("Intermittent alarm with no confirmed cause, monitoring.", "attention"),
+        ex("Fuel pressure trending low but still within limits, watching.", "attention"),
+        ex("Faint odor reported near the galley, source not yet identified.", "attention"),
+        ex("One sensor shows a pressure dip; others read normal, checking.", "attention"),
+        ex("Slight orbital drift detected, cause under review, still nominal.", "attention"),
+        ex("Possible micro-leak suspected in a fuel line, not yet verified.", "attention"),
+        ex("Unusual telemetry pattern, cause unclear, gathering more data.", "attention"),
+        ex("Battery temperature slightly elevated but within spec, monitoring.", "attention"),
+        ex("Unconfirmed radiation blip on one detector, cross-checking others.", "attention"),
+        ex("Comms static increasing, cause not yet determined, investigating.", "attention"),
+        ex("Scheduled fire drill completed, all crew accounted for.", "routine"),
+        ex("Morning status check, all systems nominal.", "routine"),
+        ex("Radiation monitor calibration finished, readings as expected.", "routine"),
+        ex("Evening meal service proceeding on schedule.", "routine"),
+        ex("Airlock leak-check test passed within nominal limits.", "routine"),
+        ex("Daily science experiment completed on schedule.", "routine"),
+        ex("Routine comms handover to the next ground station complete.", "routine"),
+        ex("Scheduled solar panel cleaning cycle finished normally.", "routine"),
+        ex("Weekly emergency equipment inspection completed, all nominal.", "routine"),
+        ex("Planned software update installed successfully, systems nominal.", "routine"),
+        ex("Crew sleep shift change logged, all normal.", "routine"),
+        ex("Scheduled thruster test fired nominally, within parameters.", "routine"),
+        ex("Routine water quality sample taken, results normal.", "routine"),
+    ]
+
+    val = [
+        ex("Confirmed fuel line rupture, venting propellant, isolating now.", "urgent"),
+        ex("Depressurization confirmed in the lab module, hatch sealed.", "urgent"),
+        ex("Confirmed electrical fire on panel four, extinguishing now.", "urgent"),
+        ex("Life support failure confirmed, backup scrubber online now.", "urgent"),
+        ex("Confirmed coolant loss, reactor temperature rising, acting now.", "urgent"),
+        ex("Cabin smoke confirmed thickening, crew moving to the safe haven.", "urgent"),
+        ex("Confirmed thruster stuck open, attitude diverging, correcting now.", "urgent"),
+        ex("Possible coolant odor near bay two, source unconfirmed, checking.", "attention"),
+        ex("Unverified pressure spike on one gauge, others nominal, watching.", "attention"),
+        ex("Slight antenna misalignment within tolerance, monitoring.", "attention"),
+        ex("Unexplained noise from the aft module, investigating the cause.", "attention"),
+        ex("Suspected loose connector causing a flicker, not yet confirmed.", "attention"),
+        ex("Minor attitude wobble within limits, keeping an eye on it.", "attention"),
+        ex("Possible software glitch reported, cannot reproduce it yet.", "attention"),
+        ex("Scheduled emergency drill completed, all stations reported ready.", "routine"),
+        ex("Water recycling system test passed as expected.", "routine"),
+        ex("Midday systems check nominal across all subsystems.", "routine"),
+        ex("Crew exercise session logged and complete.", "routine"),
+        ex("Planned antenna repointing completed on schedule.", "routine"),
+        ex("Routine cargo transfer finished without issues.", "routine"),
+    ]
+    return train, val
+
+
 def main():
-    load_dotenv(ENV_FILE, override=True)
+    load_dotenv(ENV_FILE)
     if not os.getenv("ANTHROPIC_API_KEY"):
         print("ERROR: ANTHROPIC_API_KEY not set in .env")
         return 1
 
     import dspy
 
-    lm = dspy.LM("anthropic/claude-haiku-4-5-20251001", max_tokens=800)
-    dspy.configure(lm=lm)
+    task_model = dspy.LM("anthropic/claude-haiku-4-5-20251001", max_tokens=800, temperature=0.0)
+    proposer_model = dspy.LM("anthropic/claude-sonnet-4-6", max_tokens=2000, temperature=1.0)
+    dspy.configure(lm=task_model)
 
-    # Match the signature and training data from notebook cell 10
     class ClassifyTransmission(dspy.Signature):
-        """Classify a mission transmission by urgency."""
+        """Classify a spacecraft transmission by urgency."""
         transmission: str = dspy.InputField()
         urgency: str = dspy.OutputField(desc="One of: routine, attention, urgent")
 
-    train = [
-        # Clear-cut cases
-        dspy.Example(transmission="Routine status check, all systems nominal.",
-                     urgency="routine").with_inputs("transmission"),
-        dspy.Example(transmission="Minor cabin pressure fluctuation detected.",
-                     urgency="attention").with_inputs("transmission"),
-        dspy.Example(transmission="Main bus B undervolt, immediate response required.",
-                     urgency="urgent").with_inputs("transmission"),
-        dspy.Example(transmission="Daily science experiment completed on schedule.",
-                     urgency="routine").with_inputs("transmission"),
-        dspy.Example(transmission="Slight trajectory deviation, investigating cause.",
-                     urgency="attention").with_inputs("transmission"),
-        dspy.Example(transmission="Cabin fire detected, crew evacuating to lifeboat.",
-                     urgency="urgent").with_inputs("transmission"),
-        # Ambiguous cases without obvious urgency words
-        dspy.Example(transmission="Solar array pointing error 0.3 degrees, automatic correction failed twice.",
-                     urgency="attention").with_inputs("transmission"),
-        dspy.Example(transmission="Crew morale low after fourth straight day of docking delays.",
-                     urgency="attention").with_inputs("transmission"),
-        dspy.Example(transmission="Coolant loop B isolation valve will not close, loop A still nominal.",
-                     urgency="urgent").with_inputs("transmission"),
-        dspy.Example(transmission="Hydroponics shelf 4 humidity 92 percent, dehumidifier running but not catching up.",
-                     urgency="attention").with_inputs("transmission"),
-        dspy.Example(transmission="Cabin air filter scheduled replacement complete, performance nominal.",
-                     urgency="routine").with_inputs("transmission"),
-        dspy.Example(transmission="Robotic arm joint 3 actuator drawing 15 percent above baseline current.",
-                     urgency="attention").with_inputs("transmission"),
-    ]
+    train, val = build_data(dspy)
 
     def match(example, pred, trace=None):
         return example.urgency.strip().lower() == pred.urgency.strip().lower()
@@ -84,11 +137,23 @@ def main():
 
     try:
         from dspy.teleprompt import MIPROv2
-        print("Attempting MIPROv2 with auto='heavy' (this takes 30 to 45 minutes)...")
-        miprov2 = MIPROv2(metric=match, auto="heavy", num_threads=4)
+        print("Attempting MIPROv2 heavy (roughly 5 to 10 minutes)...")
+        miprov2 = MIPROv2(
+            metric=match,
+            prompt_model=proposer_model,
+            task_model=task_model,
+            auto="heavy",
+            max_bootstrapped_demos=4,
+            max_labeled_demos=16,
+            num_threads=8,
+            seed=9,
+        )
         artifact = miprov2.compile(
             student=dspy.Predict(ClassifyTransmission),
             trainset=train,
+            valset=val,
+            view_data_batch_size=15,
+            requires_permission_to_run=False,
         )
         optimizer_used = "MIPROv2"
         print("MIPROv2 succeeded.")
@@ -96,10 +161,12 @@ def main():
         print(f"MIPROv2 errored: {e}")
         print()
         print("Falling back to BootstrapFewShotWithRandomSearch (5 to 10 minutes)...")
+        print("If the error mentions 'optuna', install it: pip install optuna")
         from dspy.teleprompt import BootstrapFewShotWithRandomSearch
         bsrs = BootstrapFewShotWithRandomSearch(
             metric=match,
             max_bootstrapped_demos=4,
+            max_labeled_demos=16,
             num_candidate_programs=6,
         )
         artifact = bsrs.compile(
@@ -110,13 +177,17 @@ def main():
 
     artifact.save(str(ARTIFACT))
     size_kb = ARTIFACT.stat().st_size / 1024
+    try:
+        instruction = artifact.signature.instructions
+    except Exception:
+        instruction = "(unavailable)"
     print()
     print(f"Saved: {ARTIFACT} ({size_kb:.1f} KB)")
     print(f"Optimizer used: {optimizer_used}")
+    print(f"Instruction it wrote:\n  {instruction}")
     print(f"Finished at {time.strftime('%H:%M:%S')}")
     print()
-    print("Verify the artifact loads correctly with:")
-    print("  python -c \"import dspy; p = dspy.Predict('transmission -> urgency'); p.load('miprov2_artifact.json'); print('OK')\"")
+    print("The MIPROv2 half of cell 12 will load this file during the talk.")
     return 0
 
 

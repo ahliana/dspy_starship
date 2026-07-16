@@ -6,22 +6,3 @@ __pycache__/
 venv/
 .DS_Store
 *.swp
-*.log
-
-# Speaker-only files, not part of the public repo
-CLAUDE.md
-TIMELINE.md
-SPEAKER_NOTES.md
-SPEAKER_SCENARIOS.md
-full_outputs_audit.txt
-dspy_pyhou_slides.pptx
-backups/
-qr_codes/
-dspy_mission_control_private.ipynb
-scripts/execute_notebook.py
-scripts/update_pptx_placeholders.py
-scripts/generate_qrs.py
-scripts/customize_pptx.py
-scripts/remove_lightning_qr.py
-scripts/strip_progress_bars.py
-outputs_audit.txt

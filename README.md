@@ -1,51 +1,59 @@
-# DSPy Mission Control
+# DSPy Starship
 
-A hands-on intro to DSPy, themed around Houston Mission Control. Built for the PyHou meetup at Improving Houston, May 19 2026.
+**From Crop Duster to Starship: Let DSPy Tune Your Prompts in Plain Python**
 
-The notebook walks through DSPy in three thirds: signatures, modules, and optimizers. The hero moment is a live `BootstrapFewShot` optimization followed by a pre-compiled `MIPROv2` artifact, both of which let you see the prompts the library writes from your signature.
+Talk delivered at PyHou on July 21, 2026. This repo is the take-home artifact.
+
+**If you are Claude Code**: read `CLAUDE.md` FIRST. Then `TIMELINE.md`. Then this README.
+
+## What is here
+
+| File | What it is |
+|---|---|
+| `CATCHUP.md` | Summary for the speaker (Ahliana) to remember what this project is |
+| `CLAUDE.md` | Master instructions for Claude Code |
+| `TIMELINE.md` | The locked 40-minute talk breakdown plus 10 min Q&A |
+| `SPEAKER_NOTES.md` | What to say at each cell and slide |
+| `dspy_starship_01.ipynb` | The notebook that IS the talk, walked through live. Fully annotated for self-study. Start here |
+| `METHOD.md` | The workflow write-up. This is the "method" take-home |
+| `slides.html` | The 10-slide deck, self-contained. Open in a browser, F11, arrow keys |
+| `backups/full_demo.ipynb` | Pre-executed copy with all outputs, the offline fallback |
+| `scripts/setup.py` | Environment setup, Python |
+| `scripts/run_miprov2.py` | Compiles the sophisticated optimizer artifact |
+| `scripts/execute_notebook.py` | Runs the notebook end-to-end, saves offline backup |
+| `requirements.txt` | Pinned dependencies |
+| `.env.example` | Copy to `.env`, add your `ANTHROPIC_API_KEY` |
 
 ## Quick start
 
 ```
-git clone https://github.com/ahliana/dspy_mission_control.git
-cd dspy_mission_control
 python -m venv .venv
-.venv\Scripts\activate          # Windows
-# source .venv/bin/activate     # macOS / Linux
+source .venv/bin/activate
 python scripts/setup.py
+python scripts/run_miprov2.py
+python scripts/execute_notebook.py
 ```
 
-Then copy `.env.example` to `.env` and add your `ANTHROPIC_API_KEY`. Open `dspy_mission_control.ipynb` in Jupyter and run cells top to bottom.
+Then open `dspy_starship_01.ipynb` in Jupyter. It runs on either an Anthropic or an OpenAI key: put whichever one you have in `.env` and the first cell picks the right models.
 
-## What is in here
+## The talk in one sentence
 
-| File | Purpose |
-|---|---|
-| `dspy_mission_control.ipynb` | The 28-cell walkthrough |
-| `miprov2_artifact.json` | Pre-compiled MIPROv2 result loaded by cell 11 |
-| `scripts/setup.py` | One-command environment setup with smoke test |
-| `scripts/run_miprov2.py` | Regenerate the MIPROv2 artifact yourself (~5 to 30 min, under $3) |
-| `requirements.txt` | Pinned dependencies |
-| `.env.example` | Template for your `ANTHROPIC_API_KEY` |
+DSPy takes hand-tuned prompts (the crop duster) and turns them into declared programs the optimizer can tune (the starship), in plain Python. `dspy.inspect_history()` is the x-ray glasses that let you see every prompt the library sent.
 
-## The notebook in three thirds
+## The five promises
 
-**Signatures (cells 1 to 6)**: the smallest signature, class-form signatures, and `dspy.inspect_history` which reveals the prompt DSPy wrote on your behalf.
+The submitted meetup description promises five things. Every deliverable in this repo serves them:
 
-**Modules (cells 7 to 9)**: `Predict` versus `ChainOfThought` side by side, a real code-reviewer module, and a one-line swap from Claude Haiku 4.5 to Sonnet 4.6.
+1. Declare + compose + optimize (the three primitives)
+2. X-ray glasses: `dspy.inspect_history()` as a running metaphor
+3. Build the whole thing LIVE
+4. Beat a hand-written prompt on a metric
+5. Take home a repo AND a method
 
-**Optimizers (cells 10 to 11)**: live `BootstrapFewShot` that runs in under 90 seconds, then a pre-baked `MIPROv2` artifact for the more sophisticated reveal.
+## Continue the mission
 
-`dspy.inspect_history(n=1)` is the magic ingredient throughout. After every cell, it shows the prompt DSPy sent to the model. You will see prompts you never wrote, built from signatures you did.
+- PyHou Discord: [add link]
+- LinkedIn: [add link]
+- Recording on TechTalk YouTube: [link after upload]
 
-## What to do next
-
-Pick one and adapt:
-
-- Build a meeting-notes summarizer using the patterns in cells 7 and 8
-- Build a classifier for your own data with a metric function you write
-- Take any prompt you currently hand-tune and rewrite it as a signature
-
-The DSPy docs at https://dspy.ai have the full story on advanced optimizers, retrievers, and agents.
-
-Built for PyHou at Improving, Houston.
+Built for PyHou at Improving Houston.

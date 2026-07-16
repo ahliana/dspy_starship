@@ -1,7 +1,8 @@
 """
 setup.py
 
-Sets up the Python environment for the DSPy Mission Control talk.
+Sets up the Python environment for the DSPy Starship talk.
+
 Run this ONCE. It will:
   1. Verify Python version >= 3.10
   2. Install required packages
@@ -74,7 +75,7 @@ def smoke_test():
     print("Running smoke test...")
     try:
         from dotenv import load_dotenv
-        load_dotenv(ENV_FILE, override=True)
+        load_dotenv(ENV_FILE)
         import dspy
         lm = dspy.LM("anthropic/claude-haiku-4-5-20251001", max_tokens=200)
         dspy.configure(lm=lm)
@@ -88,7 +89,7 @@ def smoke_test():
 
 def main():
     print("=" * 60)
-    print("DSPy Mission Control: Environment Setup")
+    print("DSPy Starship: Environment Setup")
     print("=" * 60)
     check_python_version()
     install_requirements()
@@ -101,7 +102,7 @@ def main():
             print("=" * 60)
             print()
             print("Next steps:")
-            print("  1. python scripts/run_miprov2.py  (Sunday prep, 30-45 min)")
+            print("  1. python scripts/run_miprov2.py  (30-45 min for MIPROv2)")
             print("  2. python scripts/execute_notebook.py  (offline backup)")
             return 0
     print()

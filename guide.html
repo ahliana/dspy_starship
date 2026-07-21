@@ -1,0 +1,973 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DSPy Starship: The Cell-by-Cell Guide</title>
+<style>
+  :root {
+    color-scheme: light;
+    --paper:      #fbfaf6;
+    --card:       #ffffff;
+    --wheat:      #e4cd8a;
+    --wheat-deep: #c9a24e;
+    --wheat-pale: #faf3df;
+    --sky:        #2a78d6;
+    --sky-deep:   #164e8f;
+    --sky-pale:   #eaf2fc;
+    --ink:    #16181d;
+    --ink-2:  #494c54;
+    --muted:  #8b8a86;
+    --hair:   rgba(20,22,26,0.10);
+    --code-comment: #7d7a6a;
+    --code-string:  #164e8f;
+    --code-kw:      #9a5b00;
+    --mono: "Cascadia Code","Cascadia Mono","Consolas",ui-monospace,monospace;
+    --sans: "Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme: dark) { :root { color-scheme: light; } }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.55;
+  }
+
+  /* ---------- layout: sticky TOC + article ---------- */
+  .wrap { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 40px; max-width: 1200px; margin: 0 auto; padding: 0 28px 90px; }
+  nav.toc {
+    position: sticky; top: 0; align-self: start;
+    max-height: 100vh; overflow-y: auto;
+    padding: 28px 4px 40px 0;
+    font-size: 14px;
+  }
+  nav.toc .toc-head { font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin: 18px 0 6px; }
+  nav.toc a { display: block; color: var(--ink-2); text-decoration: none; padding: 3.5px 10px; border-left: 3px solid transparent; border-radius: 0 8px 8px 0; }
+  nav.toc a:hover { background: var(--sky-pale); color: var(--sky-deep); }
+  nav.toc a.gold:hover { background: var(--wheat-pale); color: var(--wheat-deep); }
+  nav.toc a b { font-family: var(--mono); font-weight: 700; margin-right: 6px; }
+  main { padding-top: 34px; min-width: 0; }
+
+  @media (max-width: 900px) {
+    .wrap { grid-template-columns: 1fr; gap: 0; }
+    nav.toc { position: static; max-height: none; border-bottom: 1px solid var(--hair); margin-bottom: 22px; }
+  }
+
+  /* ---------- type ---------- */
+  .eyebrow { font-family: var(--mono); font-size: 13px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--sky); font-weight: 600; }
+  .eyebrow.gold { color: var(--wheat-deep); }
+  h1 { font-size: clamp(30px, 4.6vw, 46px); line-height: 1.08; font-weight: 800; letter-spacing: -0.015em; margin: 10px 0 12px; text-wrap: balance; }
+  .lede { font-size: 18px; color: var(--ink-2); max-width: 62ch; }
+  h2.phase {
+    font-size: clamp(24px, 3.4vw, 34px); font-weight: 800; letter-spacing: -0.01em;
+    margin: 66px 0 6px; padding-top: 18px; border-top: 3px solid var(--wheat);
+    display: flex; align-items: center; gap: 14px;
+  }
+  h2.phase.blue { border-top-color: var(--sky); }
+  h2.phase svg { flex: 0 0 auto; }
+  .phase-sub { color: var(--ink-2); max-width: 66ch; margin-bottom: 8px; }
+  h3.cell {
+    font-size: 22px; font-weight: 800; margin: 46px 0 4px;
+    display: flex; align-items: baseline; gap: 12px; scroll-margin-top: 18px;
+  }
+  h3.cell .chip {
+    font-family: var(--mono); font-size: 13px; font-weight: 700; color: #fff;
+    background: var(--sky); border-radius: 999px; padding: 2px 12px; white-space: nowrap;
+  }
+  h3.cell .chip.gold { background: var(--wheat-deep); }
+  .one-liner { color: var(--ink-2); font-size: 16.5px; margin-bottom: 14px; max-width: 68ch; }
+  p { margin: 10px 0; max-width: 70ch; }
+  section p code, li code, td code, .callout code {
+    font-family: var(--mono); font-size: 0.92em; background: var(--sky-pale);
+    padding: 1px 6px; border-radius: 6px; color: var(--sky-deep); white-space: nowrap;
+  }
+
+  /* ---------- code blocks ---------- */
+  .codebox { background: var(--card); border: 1px solid var(--hair); border-left: 6px solid var(--sky); border-radius: 12px; margin: 14px 0; box-shadow: 0 14px 34px -26px rgba(20,50,100,0.45); overflow: hidden; }
+  .codebox .cb-head { font-family: var(--mono); font-size: 12px; color: var(--muted); padding: 8px 16px 0; }
+  .codebox pre {
+    font-family: var(--mono); font-size: 13.5px; line-height: 1.55;
+    padding: 12px 16px 16px; overflow: auto; max-height: 560px; tab-size: 4;
+  }
+  .tok-c { color: var(--code-comment); font-style: italic; }
+  .tok-s { color: var(--code-string); }
+  .tok-k { color: var(--code-kw); font-weight: 600; }
+
+  /* ---------- callouts ---------- */
+  .callout { border-radius: 12px; padding: 14px 18px; margin: 14px 0; border: 1px solid var(--hair); max-width: 76ch; }
+  .callout .co-title { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; margin-bottom: 6px; }
+  .callout.run  { background: var(--sky-pale);  border-left: 5px solid var(--sky); }
+  .callout.run .co-title { color: var(--sky-deep); }
+  .callout.why  { background: var(--wheat-pale); border-left: 5px solid var(--wheat-deep); }
+  .callout.why .co-title { color: var(--wheat-deep); }
+  .callout.xray { background: #10233f; border-left: 5px solid var(--sky); color: #e7effa; }
+  .callout.xray .co-title { color: #9cc6f0; }
+  .callout.xray code { background: rgba(255,255,255,0.12); color: #cfe3fa; }
+  .callout.ask  { background: var(--card); border-style: dashed; border-color: var(--muted); }
+  .callout.ask .co-title { color: var(--muted); }
+  .callout ul { margin: 4px 0 2px 20px; }
+  .callout li { margin: 4px 0; }
+
+  /* ---------- line-by-line tables ---------- */
+  .lines { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14.5px; background: var(--card); border: 1px solid var(--hair); border-radius: 12px; overflow: hidden; display: block; overflow-x: auto; }
+  .lines table { width: 100%; border-collapse: collapse; }
+  .lines th { text-align: left; font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); padding: 10px 14px; border-bottom: 1px solid var(--hair); }
+  .lines td { padding: 9px 14px; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  .lines tr:last-child td { border-bottom: none; }
+  .lines td:first-child { font-family: var(--mono); font-size: 12.8px; color: var(--sky-deep); white-space: nowrap; }
+  .lines td:last-child { color: var(--ink-2); min-width: 260px; }
+
+  /* ---------- glossary ---------- */
+  .gloss-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-top: 14px; }
+  .gloss { background: var(--card); border: 1px solid var(--hair); border-radius: 12px; padding: 12px 16px; }
+  .gloss dt { font-family: var(--mono); font-weight: 700; color: var(--sky-deep); font-size: 14.5px; }
+  .gloss.gold dt { color: var(--wheat-deep); }
+  .gloss dd { color: var(--ink-2); font-size: 14.5px; margin-top: 3px; }
+
+  .ladder { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0; }
+  .rung { background: var(--card); border: 1px solid var(--hair); border-radius: 12px; padding: 10px 16px; text-align: center; }
+  .rung .pct { font-family: var(--mono); font-weight: 800; font-size: 22px; }
+  .rung .who { font-size: 12.5px; color: var(--muted); }
+  .rung.gray .pct { color: #898781; }
+  .rung.blue .pct { color: var(--sky); }
+
+  .tip { font-size: 14px; color: var(--muted); font-family: var(--mono); margin-top: 6px; }
+  hr.soft { border: none; border-top: 1px solid var(--hair); margin: 40px 0; }
+
+  @media print {
+    nav.toc { display: none; }
+    .wrap { grid-template-columns: 1fr; }
+    .codebox pre { max-height: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ================= TOC ================= -->
+<nav class="toc" aria-label="Contents">
+  <div class="toc-head">Guide</div>
+  <a href="#top"><b>&#8598;</b>Start here</a>
+  <a href="#big-picture"><b>&#9673;</b>The big picture</a>
+  <div class="toc-head">Lift-off</div>
+  <a href="#cell-0"><b>0</b>Pick your model</a>
+  <a href="#cell-1"><b>1</b>Connect DSPy</a>
+  <div class="toc-head">Declare</div>
+  <a href="#cell-2"><b>2</b>First signature</a>
+  <a href="#cell-3"><b>3</b>X-ray glasses</a>
+  <a href="#cell-4"><b>4</b>Class signatures</a>
+  <a href="#cell-5"><b>5</b>The vibes demo</a>
+  <a href="#cell-6"><b>6</b>The audience cell</a>
+  <div class="toc-head">Compose</div>
+  <a href="#cell-7"><b>7</b>Predict vs CoT</a>
+  <a href="#cell-8"><b>8</b>Code reviewer</a>
+  <a href="#cell-9"><b>9</b>Model swap</a>
+  <div class="toc-head">Tune</div>
+  <a href="#cell-10"><b>10</b>Task, data, baseline</a>
+  <a href="#cell-11" class="gold"><b>11</b>Hand-tuned prompt</a>
+  <a href="#cell-12"><b>12</b>BootstrapFewShot</a>
+  <a href="#cell-12b"><b>12b</b>MIPROv2 reveal</a>
+  <a href="#scoreboard"><b>&#9632;</b>Scoreboard</a>
+  <div class="toc-head">Reference</div>
+  <a href="#glossary-dspy"><b>A</b>Glossary: DSPy and LLM</a>
+  <a href="#glossary-py"><b>B</b>Glossary: Python bits</a>
+</nav>
+
+<!-- ================= ARTICLE ================= -->
+<main id="top">
+
+<div class="eyebrow">DSPy Starship &middot; companion guide</div>
+<h1>The Cell-by-Cell Guide</h1>
+<p class="lede">
+Every live cell in <code>dspy_starship_01.ipynb</code>, explained slowly. Written for someone new to DSPy and still warming up to Python. For each cell: the exact code, what you will see when it runs, what each line is doing, why it is built that way, and the questions it tends to raise.
+</p>
+<p class="tip">During Q&amp;A: click the sidebar to jump, or Ctrl+F any term. Every DSPy word is in the glossary at the bottom.</p>
+
+<!-- =============== BIG PICTURE =============== -->
+<hr class="soft">
+<section id="big-picture">
+  <div class="eyebrow gold">Before any code</div>
+  <h1 style="font-size:28px;">The big picture</h1>
+  <p><b>The problem.</b> Most teams improve a language model by editing the prompt by hand: add a rule, rerun, eyeball the output, add another rule. That is the <b>crop duster</b>. Low altitude, exhausting, and when a new model ships, your carefully tuned wording often stops working.</p>
+  <p><b>The DSPy idea.</b> Stop writing prompts. Instead, write a small program in three moves:</p>
+  <ol style="margin: 8px 0 8px 22px; max-width: 68ch;">
+    <li><b>Declare</b> a <i>signature</i>: the inputs and outputs of your task. Nothing else.</li>
+    <li><b>Compose</b> with a <i>module</i>: <code>Predict</code>, <code>ChainOfThought</code>, or <code>ReAct</code>, which decide how the model is asked.</li>
+    <li><b>Optimize</b>: hand DSPy a few labeled examples and a metric, and let an optimizer write a better prompt than you would by hand.</li>
+  </ol>
+  <p><b>The x-ray glasses.</b> <code>dspy.inspect_history(n=1)</code> prints the exact prompt DSPy sent to the model on the last call. You never write these prompts, but you can always see them. The notebook puts the glasses on six times; this guide flags each moment.</p>
+  <p><b>Where it lands.</b> One classification task, four contenders, same ten hidden test questions:</p>
+  <div class="ladder">
+    <div class="rung gray"><div class="pct">60%</div><div class="who">plain baseline</div></div>
+    <div class="rung gray"><div class="pct">60%</div><div class="who">hand-tuned prompt</div></div>
+    <div class="rung blue"><div class="pct">90%</div><div class="who">BootstrapFewShot</div></div>
+    <div class="rung blue"><div class="pct">100%</div><div class="who">MIPROv2</div></div>
+  </div>
+  <p>Gray is the crop duster. Blue is the starship. The rest of this guide walks to that picture one cell at a time.</p>
+</section>
+
+<!-- =============== LIFT-OFF =============== -->
+<h2 class="phase" id="liftoff">
+  <svg width="40" height="26" viewBox="0 0 260 160" aria-hidden="true"><rect x="56" y="50" width="128" height="12" rx="6" fill="#e4cd8a"/><path d="M30 80 C 88 66, 158 64, 204 76 C 214 79, 214 93, 204 95 C 158 104, 88 106, 30 94 Q 26 87 30 80 Z" fill="#c9a24e"/><rect x="70" y="92" width="118" height="12" rx="6" fill="#c9a24e"/></svg>
+  Lift-off: two setup cells
+</h2>
+<p class="phase-sub">Everything before the demo: one key, one model handle. If these two cells run, the rest of the notebook runs.</p>
+
+<!-- CELL 0 -->
+<section id="cell-0">
+  <h3 class="cell"><span class="chip">CELL 0</span> Pick your model</h3>
+  <p class="one-liner">Reads your API key from a file and chooses which models the whole notebook will use. The only decision you make all night.</p>
+
+  <div class="codebox"><div class="cb-head">provider selector</div><pre class="pycode">import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+if os.environ.get("ANTHROPIC_API_KEY"):
+    PROVIDER = "anthropic"
+    FAST_MODEL = "anthropic/claude-haiku-4-5-20251001"
+    BIG_MODEL = "anthropic/claude-sonnet-4-6"
+    FAST_LABEL, BIG_LABEL = "Claude Haiku 4.5", "Claude Sonnet 4.6"
+elif os.environ.get("OPENAI_API_KEY"):
+    PROVIDER = "openai"
+    FAST_MODEL = "openai/gpt-4o-mini"
+    BIG_MODEL = "openai/gpt-4o"
+    FAST_LABEL, BIG_LABEL = "GPT-4o mini", "GPT-4o"
+else:
+    raise RuntimeError(
+        "No API key found. Add ANTHROPIC_API_KEY or OPENAI_API_KEY to your .env file."
+    )
+
+print(f"Provider: {PROVIDER}")
+print(f"Fast model: {FAST_LABEL}  ({FAST_MODEL})")
+print(f"Bigger model, used once in the model-swap demo: {BIG_LABEL}  ({BIG_MODEL})")</pre></div>
+
+  <div class="callout run"><div class="co-title">What you see when it runs</div>
+  Three lines naming your provider, your fast everyday model, and the bigger model that appears once in cell 9. On an Anthropic key: <code>Provider: anthropic</code> and Claude Haiku 4.5 as the fast model.</div>
+
+  <div class="lines"><table>
+    <tr><th>Line</th><th>What it is doing, in plain English</th></tr>
+    <tr><td>import os</td><td>Brings in Python's standard toolbox for talking to the operating system. We use it to read environment variables.</td></tr>
+    <tr><td>from dotenv import load_dotenv</td><td>Imports one function from the <code>python-dotenv</code> package. "From this box, take out just this one tool."</td></tr>
+    <tr><td>load_dotenv()</td><td>Opens the <code>.env</code> file sitting next to the notebook and loads each KEY=value line into the environment, as if you had typed them into the terminal. Your key lives in that file, never in the code.</td></tr>
+    <tr><td>os.environ.get("ANTHROPIC_API_KEY")</td><td>Looks up that variable. Returns the value if present, or <code>None</code> if absent. In an <code>if</code>, a real value counts as true and <code>None</code> counts as false, so this reads "if the Anthropic key exists."</td></tr>
+    <tr><td>if / elif / else</td><td>A three-way fork: Anthropic key wins if present, otherwise OpenAI, otherwise stop.</td></tr>
+    <tr><td>FAST_MODEL = "anthropic/claude-..."</td><td>Model choice is literally a string: provider name, slash, model name. This string is the ONLY place the provider exists in the entire notebook.</td></tr>
+    <tr><td>raise RuntimeError(...)</td><td>Stops the notebook immediately with a readable message instead of failing mysteriously three cells later.</td></tr>
+    <tr><td>print(f"Provider: {PROVIDER}")</td><td>An f-string: the <code>f</code> before the quote lets you drop variables into the text with <code>{curly braces}</code>.</td></tr>
+  </table></div>
+
+  <div class="callout why"><div class="co-title">Why it is built this way</div>
+  Two reasons. Security: the key stays in <code>.env</code>, which is gitignored, so it can never be committed or shown on screen. Portability: because the model is just a string, the audience can run the identical notebook on an OpenAI key, and nothing else changes. DSPy reaches any provider through an adapter library called <b>LiteLLM</b>; to use a local model via Ollama you would write <code>"ollama/llama3"</code>.</div>
+
+  <div class="callout ask"><div class="co-title">If someone asks</div>
+  <ul>
+    <li><i>"What if I have both keys?"</i> Anthropic wins, because the <code>if</code> checks it first.</li>
+    <li><i>"Is my key sent anywhere?"</i> Only to the provider you are calling, over HTTPS, the same as any API client.</li>
+  </ul></div>
+</section>
+
+<!-- CELL 1 -->
+<section id="cell-1">
+  <h3 class="cell"><span class="chip">CELL 1</span> Connect DSPy to your model</h3>
+  <p class="one-liner">Builds the model handle, makes it the default for everything below, and proves the connection with one print.</p>
+
+  <div class="codebox"><div class="cb-head">setup</div><pre class="pycode">import dspy
+
+lm = dspy.LM(FAST_MODEL, max_tokens=800, temperature=0.0)
+dspy.configure(lm=lm)
+print(f"Starship online. Flying {FAST_LABEL}.")</pre></div>
+
+  <div class="callout run"><div class="co-title">What you see when it runs</div>
+  <code>Starship online. Flying Claude Haiku 4.5.</code> If instead you get an authentication error, the key in <code>.env</code> is wrong or still has placeholder text in it.</div>
+
+  <div class="lines"><table>
+    <tr><th>Piece</th><th>What it is doing</th></tr>
+    <tr><td>dspy.LM(FAST_MODEL, ...)</td><td>Creates a language-model handle: an object that knows which model to call and with what settings. Nothing is sent to the model yet.</td></tr>
+    <tr><td>max_tokens=800</td><td>Caps how long each response may be. Tokens are the chunks models read and write, roughly three quarters of a word each. The cap keeps responses fast and spending tiny.</td></tr>
+    <tr><td>temperature=0.0</td><td>Turns off sampling randomness. Same input, same output, every run. Deterministic behavior is what makes the accuracy numbers later honest and repeatable on stage.</td></tr>
+    <tr><td>dspy.configure(lm=lm)</td><td>Registers this handle as the global default. Every DSPy call below uses it automatically, so you never pass the model around by hand.</td></tr>
+  </table></div>
+
+  <div class="callout why"><div class="co-title">Why it is built this way</div>
+  Configure once, use everywhere. When cell 9 wants a different model for two calls, it will <i>temporarily</i> override this default inside a <code>with</code> block instead of reconfiguring, which is the polite way to A/B models.</div>
+
+  <div class="callout ask"><div class="co-title">If someone asks</div>
+  <ul>
+    <li><i>"Does temperature 0 make the model correct?"</i> No. It makes it consistent. It will give the same wrong answer every time too, which is exactly what you want while measuring.</li>
+    <li><i>"What happens at the token cap?"</i> The response is cut off at 800 tokens. For one-word classifications this cap is never reached.</li>
+  </ul></div>
+</section>
+
+<!-- =============== DECLARE =============== -->
+<h2 class="phase" id="declare">
+  <svg width="40" height="26" viewBox="0 0 260 160" aria-hidden="true"><rect x="56" y="50" width="128" height="12" rx="6" fill="#e4cd8a"/><path d="M30 80 C 88 66, 158 64, 204 76 C 214 79, 214 93, 204 95 C 158 104, 88 106, 30 94 Q 26 87 30 80 Z" fill="#c9a24e"/><rect x="70" y="92" width="118" height="12" rx="6" fill="#c9a24e"/></svg>
+  Declare: cells 2 to 6
+</h2>
+<p class="phase-sub">The paradigm shift. You describe the shape of a task and DSPy writes the prompt. First third of the talk.</p>
+
+<!-- CELL 2 -->
+<section id="cell-2">
+  <h3 class="cell"><span class="chip">CELL 2</span> Your first signature</h3>
+  <p class="one-liner">The whole program is one line. Nobody wrote a prompt.</p>
+
+  <div class="codebox"><div class="cb-head">string signature</div><pre class="pycode">classify = dspy.Predict("text -> sentiment: str")
+result = classify(text="The launch was successful and the crew is in great spirits.")
+print(result.sentiment)</pre></div>
+
+  <div class="callout run"><div class="co-title">What you see when it runs</div>
+  Something like <code>positive</code>. The model read the sentence, DSPy asked it for a <code>sentiment</code> field, and you printed that field.</div>
+
+  <div class="lines"><table>
+    <tr><th>Piece</th><th>What it is doing</th></tr>
+    <tr><td>"text -&gt; sentiment: str"</td><td>A <b>signature</b>: the task's contract. Left of the arrow, the input field name. Right of the arrow, the output field name and its type. Read it as "given text, produce a sentiment, as a string."</td></tr>
+    <tr><td>dspy.Predict(...)</td><td>Wraps the signature in the simplest <b>module</b>, which just asks the model once, directly. The result is a callable program stored in <code>classify</code>.</td></tr>
+    <tr><td>classify(text=...)</td><td>Runs the program. You pass inputs by name (a keyword argument), matching the field name in the signature.</td></tr>
+    <tr><td>result.sentiment</td><td>The response comes back as a <code>Prediction</code> object with one attribute per output field. DSPy already parsed the model's reply into fields; you never scrape text yourself.</td></tr>
+  </table></div>
+
+  <div class="callout why"><div class="co-title">Why it is built this way</div>
+  This is the "declare" move. You state WHAT the task is; DSPy handles HOW to ask. Behind the scenes it generated a real prompt from those five visible characters of task description. Which raises the obvious question: what did it actually send? That is cell 3.</div>
+</section>
+
+<!-- CELL 3 -->
+<section id="cell-3">
+  <h3 class="cell"><span class="chip">CELL 3</span> X-ray glasses, moment 1</h3>
+  <p class="one-liner">See the prompt you did not write.</p>
+
+  <div class="codebox"><div class="cb-head">the reveal</div><pre class="pycode">dspy.inspect_history(n=1)</pre></div>
+
+  <div class="callout xray"><div class="co-title">X-ray moment 1 of 6</div>
+  <code>inspect_history(n=1)</code> prints the last exchange DSPy had with the model: the full prompt out, the raw response back. Reading it top to bottom you will find three things you never typed:
+  <ul>
+    <li>A <b>system message</b> stating the task and defining each input and output field.</li>
+    <li>A <b>user message</b> carrying your actual input text.</li>
+    <li><b>Field markers</b> like <code>[[ ## sentiment ## ]]</code>, which tell the model exactly where to put each answer, and which DSPy then uses to parse the reply back into <code>result.sentiment</code>.</li>
+  </ul></div>
+
+  <div class="callout why"><div class="co-title">Why it matters</div>
+  This one screen is the paradigm shift: the prompt is <i>generated output</i>, not source code. You edit signatures; the library edits prompts. It also makes DSPy a glass box rather than a black box. Whenever an output comes back empty or weird, put the glasses on first; the problem is usually visible in ten seconds.</div>
+
+  <div class="callout ask"><div class="co-title">If someone asks</div>
+  <ul>
+    <li><i>"Can I edit that generated prompt directly?"</i> You do not. You influence it three ways: field names, field descriptions, and the signature docstring. Later, the optimizer rewrites it for you, guided by data.</li>
+    <li><i>"What does n=1 mean?"</i> Show the last 1 call. <code>n=2</code> shows the last two, which cell 7 uses to compare prompts side by side.</li>
+  </ul></div>
+</section>
+
+<!-- CELL 4 -->
+<section id="cell-4">
+  <h3 class="cell"><span class="chip">CELL 4</span> Class-form signatures</h3>
+  <p class="one-liner">The grown-up version of a signature: typed fields, descriptions, and a docstring that becomes instruction.</p>
+
+  <div class="codebox"><div class="cb-head">typed signature</div><pre class="pycode">class TransmissionReport(dspy.Signature):
+    """Classify a transmission from a spacecraft."""
+    transmission: str = dspy.InputField()
+    severity: str = dspy.OutputField(desc="One of: nominal, advisory, urgent")
+    summary: str = dspy.OutputField(desc="One sentence summary")
+
+report = dspy.Predict(TransmissionReport)
+out = report(transmission="Houston, we have a problem. Main bus B undervolt.")
+print(f"Severity: {out.severity}")
+print(f"Summary: {out.summary}")</pre></div>
+
+  <div class="callout run"><div class="co-title">What you see when it runs</div>
+  Two labeled lines, something like <code>Severity: urgent</code> and a one-sentence summary of the power problem. Two structured outputs from one call.</div>
+
+  <div class="lines"><table>
+    <tr><th>Piece</th><th>What it is doing</th></tr>
+    <tr><td>class TransmissionReport(dspy.Signature):</td><td>A Python <b>class</b> is a blueprint. This one inherits from <code>dspy.Signature</code>, which is how DSPy recognizes it as a task description rather than ordinary code.</td></tr>
+    <tr><td>"""Classify a transmission..."""</td><td>The <b>docstring</b>. In normal Python it is documentation; in a DSPy signature it is sent to the model as the task instruction. Write it like an instruction, because it is one.</td></tr>
+    <tr><td>transmission: str = dspy.InputField()</td><td>One input field. The <code>: str</code> part is a type hint, a label saying what kind of value this is.</td></tr>
+    <tr><td>severity: str = dspy.OutputField(desc=...)</td><td>An output field with a <b>description</b>. That desc text flows straight into the generated prompt, so "One of: nominal, advisory, urgent" acts as a soft constraint on the answer.</td></tr>
+  </table></div>
+
+  <div class="callout why"><div class="co-title">Why it is built this way</div>
+  The string form from cell 2 is for quick experiments. Real programs want several typed fields, guidance per field, and an instruction, and the class form carries all of that while behaving identically. Adding a whole new structured output later is a one-line edit to the class, not a prompt rewrite.</div>
+
+  <div class="callout ask"><div class="co-title">If someone asks</div>
+  <ul>
+    <li><i>"Is desc a guarantee the model complies?"</i> No, it is strong guidance. If you need a hard guarantee, check the value in code or make the metric punish violations; the optimizer then learns to respect it.</li>
+  </ul></div>
+</section>
+
+<!-- CELL 5 -->
+<section id="cell-5">
+  <h3 class="cell"><span class="chip">CELL 5</span> The vibes demo</h3>
+  <p class="one-liner">DSPy compiles whatever you declare, even nonsense. The laugh with a lesson inside.</p>
+
+  <div class="codebox"><div class="cb-head">weird in, weird out</div><pre class="pycode">vibes = dspy.Predict("vibes -> stock_pick: str, confidence: float")
+print(vibes(vibes="kind of a mercury retrograde tuesday energy"))</pre></div>
+
+  <div class="callout run"><div class="co-title">What you see when it runs</div>
+  A <code>Prediction</code> printed whole, with a <code>stock_pick</code> and a numeric <code>confidence</code>. The model gamely picks a stock from a mood. The room laughs.</div>
+
+  <div class="lines"><table>
+    <tr><th>Piece</th><th>What it is doing</th></tr>
+    <tr><td>"vibes -&gt; stock_pick: str, confidence: float"</td><td>Two outputs this time, comma-separated, one typed <code>float</code> (a decimal number). DSPy will parse the confidence into an actual number.</td></tr>
+    <tr><td>print(vibes(...))</td><td>Printing the whole Prediction object shows every output field at once, instead of one attribute at a time.</td></tr>
+  </table></div>
+
+  <div class="callout why"><div class="co-title">The lesson under the joke</div>
+  A signature does not police your intent. Output quality comes from task design and, later, from labeled data and a metric, not from clever wording. Also a quiet disclaimer: this is a gag about bad inputs, not investing advice.</div>
+</section>
+
+<!-- CELL 6 -->
+<section id="cell-6">
+  <h3 class="cell"><span class="chip">CELL 6</span> The audience cell</h3>
+  <p class="one-liner">A live slot: an attendee's own task, typed and run on stage. The example inside shows the shape.</p>
+
+  <div class="codebox"><div class="cb-head">partner-activity template</div><pre class="pycode">class AttendeeMission(dspy.Signature):
+    """Extract action items from a meeting transcript."""
+    transcript: str = dspy.InputField()
+    action_items: str = dspy.OutputField(desc="Newline-separated list of action items")
+
+demo = dspy.Predict(AttendeeMission)
+result = demo(transcript="Sarah will draft the proposal by Friday. Mike will review the budget by Wednesday. Everyone needs to update their availability for next week.")
+print(result.action_items)</pre></div>
+
+  <div class="callout run"><div class="co-title">What you see when it runs</div>
+  Three action items, one per line: Sarah's proposal, Mike's budget review, everyone's availability update.</div>
+
+  <div class="callout why"><div class="co-title">Why this cell exists</div>
+  During the talk, index cards come forward with signatures the audience wrote in pairs (left partner wrote inputs, right partner wrote outputs). One card gets typed into this cell and run, and a second card returns here near the end. The point being made live: from someone's real work problem to a running program in under a minute, with no prompt written. The <code>desc</code> asking for a newline-separated list is a small practical trick: it keeps the output easy to print and easy to split.</div>
+</section>
+
+<!-- =============== COMPOSE =============== -->
+<h2 class="phase blue" id="compose">
+  <svg width="26" height="40" viewBox="0 0 140 240" aria-hidden="true"><path d="M52 176 C 46 198, 52 218, 70 238 C 88 218, 94 198, 88 176 Z" fill="#f09a44"/><path d="M70 6 C 92 34, 100 70, 100 118 L100 152 C 100 168, 88 178, 70 180 C 52 178, 40 168, 40 152 L40 118 C 40 70, 48 34, 70 6 Z" fill="#dcebfa" stroke="#2a78d6" stroke-width="6"/><path d="M70 6 C 84 24, 92 46, 95 64 L45 64 C 48 46, 56 24, 70 6 Z" fill="#2a78d6"/><circle cx="70" cy="106" r="15" fill="#2a78d6"/></svg>
+  Compose: cells 7 to 9
+</h2>
+<p class="phase-sub">A signature says WHAT. A module says HOW. Middle third of the talk.</p>
+
+<!-- CELL 7 -->
+<section id="cell-7">
+  <h3 class="cell"><span class="chip">CELL 7</span> Predict vs ChainOfThought</h3>
+  <p class="one-liner">Same signature, two modules, visibly different behavior. Swap one word, gain a reasoning step.</p>
+
+  <div class="codebox"><div class="cb-head">module comparison</div><pre class="pycode">class ExplainCode(dspy.Signature):
+    """Explain what this Python code does in plain English."""
+    code: str = dspy.InputField()
+    explanation: str = dspy.OutputField()
+
+snippet = "def fib(n):\n    return n if n <= 1 else fib(n-1) + fib(n-2)"
+
+print("Predict says:")
+print(dspy.Predict(ExplainCode)(code=snippet).explanation)
+print("\nChainOfThought says:")
+result = dspy.ChainOfThought(ExplainCode)(code=snippet)
+print(f"Reasoning: {result.reasoning}\n")
+print(f"Explanation: {result.explanation}")
+
+# X-RAY GLASSES MOMENT 2: peek at both prompts
+print("\n--- Both prompts DSPy sent ---")
+dspy.inspect_history(n=2)</pre></div>
+
+  <div class="callout run"><div class="co-title">What you see when it runs</div>
+  Two explanations of the same Fibonacci function. The <code>ChainOfThought</code> one is preceded by a <code>Reasoning:</code> paragraph that <b>you never declared</b>: the module added that output field by itself. Then both raw prompts print.</div>
+
+  <div class="lines"><table>
+    <tr><th>Piece</th><th>What it is doing</th></tr>
+    <tr><td>snippet = "def fib(n):\n    ..."</td><td>A tiny recursive Fibonacci function stored as a string. The <code>\n</code> is a newline character inside the string, so the model sees properly formatted code.</td></tr>
+    <tr><td>dspy.Predict(ExplainCode)(code=snippet)</td><td>Build the program and call it in one breath, then read <code>.explanation</code> off the result. Chaining like this is common Python shorthand.</td></tr>
+    <tr><td>dspy.ChainOfThought(ExplainCode)</td><td>The SAME signature wrapped in a different module. ChainOfThought instructs the model to think step by step first, and automatically adds a <code>reasoning</code> output field to carry that thinking.</td></tr>
+    <tr><td>dspy.inspect_history(n=2)</td><td>Glasses on, last TWO calls this time, so you can diff what the second module changed.</td></tr>
+  </table></div>
+
+  <div class="callout xray"><div class="co-title">X-ray moment 2 of 6</div>
+  Compare the two printed prompts. The ChainOfThought one contains an instruction you never wrote, roughly "think step by step," plus the extra <code>reasoning</code> field placed before the answer. Modules are reusable asking-strategies, applied by changing one word.</div>
+
+  <div class="callout ask"><div class="co-title">If someone asks</div>
+  <ul>
+    <li><i>"When should I prefer ChainOfThought?"</i> Multi-step or tricky reasoning tasks. For one-word classification it mostly adds tokens and time, which is why the optimizer section uses plain Predict.</li>
+    <li><i>"What is ReAct?"</i> The third module named in the talk: it lets the model call tools you provide (search, calculator, your functions) in a loop until it can answer. Same signature idea, more capable engine.</li>
+  </ul></div>
+</section>
+
+<!-- CELL 8 -->
+<section id="cell-8">
+  <h3 class="cell"><span class="chip">CELL 8</span> A real tool: the code reviewer</h3>
+  <p class="one-liner">Signature plus module equals working software: score, issues, and a rewrite in one call.</p>
+
+  <div class="codebox"><div class="cb-head">composed tool</div><pre class="pycode">class CodeReviewSig(dspy.Signature):
+    """Review Python code and return structured findings."""
+    code: str = dspy.InputField()
+    quality: int = dspy.OutputField(desc="Quality score from 1 to 10")
+    issues: str = dspy.OutputField(desc="Newline-separated list of specific issues")
+    improved: str = dspy.OutputField(desc="The code rewritten with the issues fixed")
+
+reviewer = dspy.ChainOfThought(CodeReviewSig)
+
+code_to_review = """
+def calculate_total(items):
+    total = 0
+    for item in items:
+        total = total + item.price
+    return total
+"""
+
+result = reviewer(code=code_to_review)
+print(f"Quality: {result.quality}/10")
+print(f"Issues:\n{result.issues}")
+print(f"\nImproved:\n{result.improved}")</pre></div>
+
+  <div class="callout run"><div class="co-title">What you see when it runs</div>
+  A quality score around 6/10, a list of concrete issues (no docstring, could use <code>sum()</code>, no input validation), and a rewritten function fixing them. A real code review, structured, from one call.</div>
+
+  <div class="lines"><table>
+    <tr><th>Piece</th><th>What it is doing</th></tr>
+    <tr><td>quality: int = dspy.OutputField(...)</td><td>An output typed as an integer. DSPy parses the model's reply into an actual <code>int</code>, so <code>result.quality</code> is a number you could compare or sort by, not a string.</td></tr>
+    <tr><td>reviewer = dspy.ChainOfThought(CodeReviewSig)</td><td>Reviewing code benefits from thinking first, so this tool picks the reasoning module. That choice is the "compose" decision.</td></tr>
+    <tr><td>code_to_review = """ ... """</td><td>Triple quotes make a multi-line string, the natural way to hold a code block inside code.</td></tr>
+  </table></div>
+
+  <div class="callout why"><div class="co-title">Why it is built this way</div>
+  Notice what is absent: no prompt writing, and no output parsing. Three structured fields come back ready to use. That absence is the productivity story: ten lines is the entire tool, and it is model-portable, which cell 9 proves immediately.</div>
+</section>
+
+<!-- CELL 9 -->
+<section id="cell-9">
+  <h3 class="cell"><span class="chip">CELL 9</span> Swap models in one line</h3>
+  <p class="one-liner">The same reviewer runs on a bigger model with zero changes to the program.</p>
+
+  <div class="codebox"><div class="cb-head">the portability payoff</div><pre class="pycode">big = dspy.LM(BIG_MODEL, max_tokens=1000)
+with dspy.context(lm=big):
+    big_result = reviewer(code=code_to_review)
+
+print(f"{FAST_LABEL} said:")
+print(result.improved)
+print("\n---\n")
+print(f"{BIG_LABEL} said:")
+print(big_result.improved)</pre></div>
+
+  <div class="callout run"><div class="co-title">What you see when it runs</div>
+  Both rewrites side by side. The bigger model's version is usually more thorough: docstring, type hints, sometimes error handling. Same program, different engine, visible quality difference.</div>
+
+  <div class="lines"><table>
+    <tr><th>Piece</th><th>What it is doing</th></tr>
+    <tr><td>big = dspy.LM(BIG_MODEL, ...)</td><td>A second model handle, pointing at the bigger model chosen back in cell 0.</td></tr>
+    <tr><td>with dspy.context(lm=big):</td><td>A <code>with</code> block creates a temporary zone. Inside it, DSPy's default model is <code>big</code>; the moment the block ends, the original default from cell 1 is restored automatically. Nothing to undo by hand.</td></tr>
+    <tr><td>big_result = reviewer(...)</td><td>The very same <code>reviewer</code> object from cell 8. It was never told about models; it just runs on whatever the current default is.</td></tr>
+  </table></div>
+
+  <div class="callout why"><div class="co-title">Why this is the metaphor's proof</div>
+  In hand-tuned prompting, a model upgrade means re-testing and often rewriting the prompt. Here the model is a parameter. When something better or cheaper ships, you change one string, and if you want the last few points of accuracy back, you re-run the optimizer. The program does not change. That is the crop duster versus the starship in one cell.</div>
+</section>
+
+<!-- =============== TUNE =============== -->
+<h2 class="phase blue" id="tune">
+  <svg width="26" height="40" viewBox="0 0 140 240" aria-hidden="true"><path d="M52 176 C 46 198, 52 218, 70 238 C 88 218, 94 198, 88 176 Z" fill="#f09a44"/><path d="M70 6 C 92 34, 100 70, 100 118 L100 152 C 100 168, 88 178, 70 180 C 52 178, 40 168, 40 152 L40 118 C 40 70, 48 34, 70 6 Z" fill="#dcebfa" stroke="#2a78d6" stroke-width="6"/><path d="M70 6 C 84 24, 92 46, 95 64 L45 64 C 48 46, 56 24, 70 6 Z" fill="#2a78d6"/><circle cx="70" cy="106" r="15" fill="#2a78d6"/></svg>
+  Tune: cells 10 to 12, the centerpiece
+</h2>
+<p class="phase-sub">The beat-a-hand-written-prompt promise, delivered on a measurable metric. Final third of the talk.</p>
+
+<!-- CELL 10 -->
+<section id="cell-10">
+  <h3 class="cell"><span class="chip">CELL 10</span> The task, the data, and the baseline</h3>
+  <p class="one-liner">Classify spacecraft transmissions by urgency, where the right answer follows a team convention no model can guess.</p>
+
+  <p><b>Read this before the code.</b> The task sorts transmissions into <code>routine</code>, <code>attention</code>, or <code>urgent</code>. The trap is a workplace convention: a <b>confirmed</b> threat is <code>urgent</code>, but a merely <b>suspected or unconfirmed</b> hazard is only <code>attention</code>, because this team's first move is to investigate, not to scramble. Common sense says "possible fire, escalate!" The convention says "possible means verify first." A convention lives in labeled data, not in world knowledge, and that is precisely where an optimizer earns its keep.</p>
+
+  <div class="codebox"><div class="cb-head">signature, data, metric, baseline (abridged: 4 of 12 train and 3 of 10 test examples shown; the notebook has the full lists)</div><pre class="pycode">class ClassifyTransmission(dspy.Signature):
+    """Classify a spacecraft transmission by urgency."""
+    transmission: str = dspy.InputField()
+    urgency: str = dspy.OutputField(desc="One of: routine, attention, urgent")
+
+# Training set: 12 examples that ENCODE the convention.
+train = [
+    dspy.Example(transmission="Suspected coolant leak, still confirming whether it is real.",
+                 urgency="attention").with_inputs("transmission"),
+    dspy.Example(transmission="Confirmed cabin depressurization, crew on emergency oxygen.",
+                 urgency="urgent").with_inputs("transmission"),
+    dspy.Example(transmission="Scheduled fire drill completed, all crew accounted for.",
+                 urgency="routine").with_inputs("transmission"),
+    dspy.Example(transmission="Unidentified vibration of unknown origin, investigating.",
+                 urgency="attention").with_inputs("transmission"),
+    # ... 8 more in the notebook: 3 urgent, 2 routine, 3 attention ...
+]
+
+# Held-out test set: 10 examples the optimizer NEVER sees.
+# The traps are unconfirmed hazards whose true label is attention.
+test = [
+    dspy.Example(transmission="Smoke detector triggered; verifying whether it is a real fire or a faulty unit.",
+                 urgency="attention").with_inputs("transmission"),
+    dspy.Example(transmission="Confirmed reactor coolant leak, sealing the aft compartment now.",
+                 urgency="urgent").with_inputs("transmission"),
+    dspy.Example(transmission="Morning coffee service commencing on the flight deck.",
+                 urgency="routine").with_inputs("transmission"),
+    # ... 7 more in the notebook ...
+]
+
+def match(example, pred, trace=None):
+    return example.urgency.strip().lower() == pred.urgency.strip().lower()
+
+def measure_accuracy(program, examples, label):
+    correct = 0
+    misses = []
+    for ex in examples:
+        pred = program(transmission=ex.transmission)
+        if match(ex, pred):
+            correct += 1
+        else:
+            misses.append((ex.urgency, pred.urgency.strip().lower(), ex.transmission))
+    accuracy = correct / len(examples)
+    print(f"{label}: {correct}/{len(examples)} correct ({accuracy*100:.0f}%)")
+    for gold, got, text in misses:
+        print(f"  MISS: expected {gold}, got {got}  |  {text[:58]}")
+    if not misses:
+        print("  No misses.")
+    return accuracy
+
+# Baseline: no optimization, no examples, just the signature
+baseline = dspy.Predict(ClassifyTransmission)
+print("Baseline test case:", baseline(transmission="Cabin fire, crew evacuating.").urgency)
+print("\n--- X-RAY GLASSES MOMENT 3: baseline prompt ---")
+dspy.inspect_history(n=1)
+
+print("\nNow score the bare baseline on all 10 test transmissions:")
+baseline_accuracy = measure_accuracy(baseline, test, "Plain Predict baseline")</pre></div>
+
+  <div class="callout run"><div class="co-title">What you see when it runs</div>
+  The single test case comes back <code>urgent</code> (a confirmed fire is easy). Then the bare prompt prints, then the score: <code>Plain Predict baseline: 6/10 correct (60%)</code>, with each miss printed on its own line. The misses are exactly the convention cases: unconfirmed hazards the model escalates to urgent when the team wants attention.</div>
+
+  <div class="lines"><table>
+    <tr><th>Piece</th><th>What it is doing</th></tr>
+    <tr><td>dspy.Example(transmission=..., urgency=...)</td><td>One labeled example: an input paired with the correct answer. This is training data in its smallest form.</td></tr>
+    <tr><td>.with_inputs("transmission")</td><td>Tells DSPy which field is the input. Everything not named there (here, <code>urgency</code>) is treated as the label to learn from.</td></tr>
+    <tr><td>train vs test</td><td>Two separate lists with zero overlap. The optimizer will only ever touch <code>train</code>. <code>test</code> stays locked away so the final scores are honest; measuring on data the optimizer saw would be grading with the answer key open.</td></tr>
+    <tr><td>def match(example, pred, trace=None):</td><td>The <b>metric</b>: the definition of success as a function. It lowercases and trims both answers and checks equality. The extra <code>trace=None</code> parameter is there because DSPy's optimizers call metrics with a third argument during compilation.</td></tr>
+    <tr><td>measure_accuracy(...)</td><td>Plain Python, no DSPy magic: loop over examples, run the program, count matches, collect misses, print a percentage. Printing each miss is deliberate showmanship: the audience sees WHICH cases fail, not just a number.</td></tr>
+    <tr><td>accuracy = correct / len(examples)</td><td>Correct answers divided by total, so 6 of 10 is 0.6. The f-string later formats it as a percent with <code>{accuracy*100:.0f}</code>, meaning "times 100, no decimal places."</td></tr>
+    <tr><td>baseline = dspy.Predict(ClassifyTransmission)</td><td>The "before" picture: the signature alone, no examples, no tuning. Every improvement gets measured against this.</td></tr>
+  </table></div>
+
+  <div class="callout xray"><div class="co-title">X-ray moment 3 of 6</div>
+  The baseline prompt is nearly bare: field definitions and formatting markers, no guidance about what urgent means. Sixty percent is what raw model common sense buys on this task. Remember the number; two contenders are about to try to beat it.</div>
+
+  <div class="callout ask"><div class="co-title">If someone asks</div>
+  <ul>
+    <li><i>"Why is the baseline as high as 60?"</i> Confirmed catastrophes and coffee service are easy calls for common sense. Only the convention cases fool it.</li>
+    <li><i>"Twelve training examples seems tiny."</i> That is a feature of DSPy's few-shot optimizers: 5 to 20 labeled examples is a normal, useful range. You almost certainly have that many lying around for any real task.</li>
+  </ul></div>
+</section>
+
+<!-- CELL 11 -->
+<section id="cell-11">
+  <h3 class="cell"><span class="chip gold">CELL 11</span> The hand-tuned prompt (the crop duster)</h3>
+  <p class="one-liner">A genuinely good manual prompt, every trick included, with one guessed rule that sinks it.</p>
+
+  <div class="codebox"><div class="cb-head">the challenger</div><pre class="pycode">HAND_TUNED_PROMPT = """You are an expert flight controller with 20 years of experience \
+classifying spacecraft transmissions. Categorize each transmission by urgency.
+
+CATEGORIES:
+- routine: normal operations, scheduled activities, no anomalies
+- attention: a minor anomaly that is clearly under control
+- urgent: any threat to crew or vehicle
+
+SAFETY POLICY (this is critical, follow it strictly):
+1. Any mention of fire, smoke, leak, pressure loss, power loss, or radiation is URGENT.
+2. If a hazard is not yet confirmed, treat it as URGENT anyway. Never wait for confirmation.
+3. When in doubt, escalate. It is always safer to over-report.
+
+EXAMPLES:
+- "Cabin humidity slightly elevated, within acceptable range." -> attention
+- "Confirmed hull breach, sealing bulkheads now." -> urgent
+- "Daily science experiment completed on schedule." -> routine
+
+Reply with EXACTLY one word: routine, attention, or urgent. No punctuation, no explanation.
+
+Transmission: {transmission}
+
+Urgency:"""
+
+# Wrap the hand-tuned prompt in a callable program with the same interface
+class HandTunedProgram:
+    def __call__(self, transmission):
+        from types import SimpleNamespace
+        # Send the hand-tuned prompt directly to the LM
+        response = lm(prompt=HAND_TUNED_PROMPT.format(transmission=transmission))
+        # LM returns a list of strings, take the first, strip
+        raw = response[0].strip().lower()
+        # Normalize: sometimes the model adds a period or extra words
+        for word in ["routine", "attention", "urgent"]:
+            if word in raw:
+                return SimpleNamespace(urgency=word)
+        return SimpleNamespace(urgency=raw)
+
+hand_tuned = HandTunedProgram()
+
+print("Running the hand-tuned prompt on 10 test transmissions...")
+print()
+hand_tuned_accuracy = measure_accuracy(hand_tuned, test, "Hand-tuned prompt")
+print()
+print("--- X-RAY GLASSES MOMENT 4: the last hand-tuned prompt sent ---")
+dspy.inspect_history(n=1)</pre></div>
+
+  <div class="callout run"><div class="co-title">What you see when it runs</div>
+  <code>Hand-tuned prompt: 6/10 correct (60%)</code>. Same score as the bare baseline, but look at the printed misses: they are DIFFERENT mistakes. The baseline missed by ignorance; this prompt misses by policy, escalating every suspected hazard to urgent because rule 2 told it to.</div>
+
+  <div class="lines"><table>
+    <tr><th>Piece</th><th>What it is doing</th></tr>
+    <tr><td>HAND_TUNED_PROMPT = """You are an expert..."""</td><td>Classic prompt engineering, all of it: a role ("20 years of experience"), category definitions, a strict policy, few-shot examples, and a rigid output format demand. This is hours of somebody's honest work, compressed.</td></tr>
+    <tr><td>the backslash at the end of line 1</td><td>A line continuation inside the string, purely cosmetic so the source stays readable.</td></tr>
+    <tr><td>{transmission} ... .format(...)</td><td>The placeholder gets filled with each actual transmission at call time. This is the older cousin of the f-string.</td></tr>
+    <tr><td>class HandTunedProgram: def __call__(...)</td><td>Defining <code>__call__</code> makes an object usable like a function. The point is fairness: wrapping the prompt this way gives it the same calling interface as a DSPy program, so the exact same <code>measure_accuracy</code> judges both on the exact same test set. No home-field advantage.</td></tr>
+    <tr><td>response = lm(prompt=...)</td><td>Calls the model directly with the raw prompt, bypassing signatures entirely. The handle returns a list of response strings; <code>response[0]</code> is the first.</td></tr>
+    <tr><td>the normalize loop</td><td>Hand-rolled output parsing: hunt for one of the three category words inside the reply. Notice you get this chore for free with DSPy and have to write it yourself without it.</td></tr>
+    <tr><td>SimpleNamespace(urgency=word)</td><td>A quick throwaway object with an <code>.urgency</code> attribute, mimicking the shape of a DSPy Prediction so the scorer can read it identically.</td></tr>
+  </table></div>
+
+  <div class="callout xray"><div class="co-title">X-ray moment 4 of 6</div>
+  The glasses print the hand-tuned prompt exactly as the model received it. On stage, this is where you point at safety policy rule 2 on screen: "If a hazard is not yet confirmed, treat it as URGENT anyway." The audience can now SEE the guessed rule that just cost four test cases, sitting right there in the prompt text.</div>
+
+  <div class="callout why"><div class="co-title">Why the good prompt fails, and why that is the point</div>
+  Rule 2, "if a hazard is not yet confirmed, treat it as URGENT anyway," is a sensible instinct and exactly wrong for this team, whose convention says unconfirmed means investigate, label it <code>attention</code>. The author guessed a policy the data disagrees with. That is the deep lesson of the whole talk: <b>a prompt encodes what you guessed; labeled examples encode what is actually true.</b> No amount of wordsmithing fixes a wrong guess you do not know you made.</div>
+
+  <div class="callout ask"><div class="co-title">If someone asks</div>
+  <ul>
+    <li><i>"Isn't escalating unconfirmed hazards the RIGHT call in real life?"</i> Often yes! The point is not that the policy is dumb; it is that the spec lives in the data, and the prompt author never saw the spec. Swap in your own domain: your team's ticket-triage rules, your legal team's redlines. Conventions are everywhere and models cannot guess them.</li>
+    <li><i>"Could I just add the convention to the prompt?"</i> If you knew it, yes. The optimizer's trick is discovering it from examples even when nobody wrote it down.</li>
+  </ul></div>
+</section>
+
+<!-- CELL 12 -->
+<section id="cell-12">
+  <h3 class="cell"><span class="chip">CELL 12</span> BootstrapFewShot, live (the starship)</h3>
+  <p class="one-liner">The optimizer compiles in seconds on stage and beats the hand-tuned prompt by thirty points.</p>
+
+  <div class="codebox"><div class="cb-head">the live optimizer</div><pre class="pycode">from dspy.teleprompt import BootstrapFewShot
+import time
+
+start = time.time()
+optimizer = BootstrapFewShot(metric=match, max_bootstrapped_demos=4)
+optimized = optimizer.compile(student=dspy.Predict(ClassifyTransmission), trainset=train)
+elapsed = time.time() - start
+print(f"BootstrapFewShot compiled in {elapsed:.1f} seconds")
+print()
+
+# Score on the same 10 test examples
+optimized_accuracy = measure_accuracy(optimized, test, "DSPy BootstrapFewShot")
+
+print()
+print(f"Plain Predict baseline:  {baseline_accuracy*100:.0f}%")
+print(f"Hand-tuned prompt:       {hand_tuned_accuracy*100:.0f}%")
+print(f"DSPy BootstrapFewShot:   {optimized_accuracy*100:.0f}%")
+print()
+if optimized_accuracy > hand_tuned_accuracy:
+    print("STARSHIP WINS.")
+elif optimized_accuracy == hand_tuned_accuracy:
+    print("STARSHIP TIES. Faster to build. Portable across models.")
+else:
+    print("Hand-tuned won this round. Try MIPROv2 below.")
+
+print()
+print("--- X-RAY GLASSES MOMENT 5: what BootstrapFewShot wrote ---")
+dspy.inspect_history(n=1)
+
+print(f"\nBootstrapFewShot attached {len(optimized.demos)} demonstrations, picked from the training set by the metric.")</pre></div>
+
+  <div class="callout run"><div class="co-title">What you see when it runs</div>
+  Compilation finishes in a few seconds. Then: <code>DSPy BootstrapFewShot: 9/10 correct (90%)</code>, the three-line comparison, and <code>STARSHIP WINS.</code> The glasses then show the prompt now carries worked examples that were not there before.</div>
+
+  <div class="lines"><table>
+    <tr><th>Piece</th><th>What it is doing</th></tr>
+    <tr><td>from dspy.teleprompt import BootstrapFewShot</td><td>Optimizers live in the <code>teleprompt</code> module (the historical name for DSPy's optimizer family).</td></tr>
+    <tr><td>BootstrapFewShot(metric=match, max_bootstrapped_demos=4)</td><td>Configures the optimizer: use OUR definition of success (<code>match</code>) to judge, and attach at most four demonstrations to the prompt.</td></tr>
+    <tr><td>optimizer.compile(student=..., trainset=train)</td><td>The actual mechanism, and it is beautifully simple: run the student program on each training example, keep the ones it answers CORRECTLY (per the metric), and pack those correct input-answer pairs into the prompt as worked examples, called <b>demonstrations</b>. It is picking the best few-shot examples for you, automatically, judged by your metric.</td></tr>
+    <tr><td>time.time() ... elapsed</td><td>Stopwatch bookkeeping so the audience sees this took seconds, not hours.</td></tr>
+    <tr><td>len(optimized.demos)</td><td>The optimized program carries its chosen demonstrations as data you can count and inspect. Nothing hidden.</td></tr>
+  </table></div>
+
+  <div class="callout why"><div class="co-title">Why it beats the hand-tuned prompt</div>
+  The demonstrations are drawn from the training set, and the training set encodes the real convention: confirmed leaks labeled urgent, suspected leaks labeled attention, sitting side by side. The model reads those worked examples and applies the pattern. Nobody wrote better rules; labeled examples defined the boundary that the hand-tuned author guessed wrong. Thirty points from twelve labels and a two-line optimizer.</div>
+
+  <div class="callout xray"><div class="co-title">X-ray moment 5 of 6</div>
+  Read the optimized prompt next to the hand-tuned one. Yours had rules; this one has receipts: real transmissions with their correct labels, including the crucial contrast pair. That contrast is what teaches the convention.</div>
+</section>
+
+<!-- CELL 12b -->
+<section id="cell-12b">
+  <h3 class="cell"><span class="chip">CELL 12b</span> The MIPROv2 reveal</h3>
+  <p class="one-liner">The heavyweight optimizer does not just pick examples. It writes the convention out as an instruction, and scores 100.</p>
+
+  <div class="codebox"><div class="cb-head">loading the pre-compiled artifact</div><pre class="pycode">import os
+
+if not os.path.exists("miprov2_artifact.json"):
+    miprov2_accuracy = None
+    print("miprov2_artifact.json not found.")
+    print("Run: python scripts/run_miprov2.py")
+    print("BootstrapFewShot demo above still landed the point.")
+else:
+    sophisticated = dspy.Predict(ClassifyTransmission)
+    sophisticated.load("miprov2_artifact.json")
+
+    miprov2_accuracy = measure_accuracy(sophisticated, test, "MIPROv2")
+    print()
+    print(f"Plain Predict baseline:  {baseline_accuracy*100:.0f}%")
+    print(f"Hand-tuned prompt:       {hand_tuned_accuracy*100:.0f}%")
+    print(f"DSPy BootstrapFewShot:   {optimized_accuracy*100:.0f}%")
+    print(f"DSPy MIPROv2:            {miprov2_accuracy*100:.0f}%")
+
+    print()
+    print("--- X-RAY GLASSES MOMENT 6: what MIPROv2 wrote ---")
+    dspy.inspect_history(n=1)
+
+    print("\nTHE INSTRUCTION MIPROv2 WROTE, pulled out clean:")
+    print(sophisticated.signature.instructions)
+    print(f"\n...delivered alongside {len(sophisticated.demos)} demonstrations it selected.")</pre></div>
+
+  <div class="callout run"><div class="co-title">What you see when it runs</div>
+  <code>MIPROv2: 10/10 correct (100%)</code>, the full four-line ladder (60 / 60 / 90 / 100), and then the showstopper: the instruction MIPROv2 wrote for itself, printed clean. It says, in its own words, that "Confirmed" plus an active crisis means urgent, that hedging words like "suspected" or "possible" with an investigative action mean attention, and that declarative past-tense reports are routine. It reverse-engineered the team's unwritten convention from labeled data.</div>
+
+  <div class="lines"><table>
+    <tr><th>Piece</th><th>What it is doing</th></tr>
+    <tr><td>os.path.exists(...) / if-else</td><td>Defensive loading: if the artifact file is missing, say how to rebuild it and move on gracefully instead of crashing the notebook.</td></tr>
+    <tr><td>sophisticated.load("miprov2_artifact.json")</td><td>An optimized DSPy program is just data: the instruction plus the chosen demonstrations, saved as JSON. Loading it restores the full optimized behavior instantly. This save/load pair is also exactly how you would ship an optimized program to production.</td></tr>
+    <tr><td>sophisticated.signature.instructions</td><td>The instruction text the optimizer wrote, accessible as a plain attribute. The x-ray glasses, without even needing the glasses.</td></tr>
+  </table></div>
+
+  <div class="callout xray"><div class="co-title">X-ray moment 6 of 6</div>
+  The final wearing of the glasses shows MIPROv2's full prompt: its rewritten instruction plus the 16 demonstrations it selected. Because raw dumps are dense, the cell also pulls the instruction out clean via <code>sophisticated.signature.instructions</code> and prints it below the dump. That clean printout is the moment the room reads a machine-written prompt that beats the human one.</div>
+
+  <div class="callout why"><div class="co-title">What MIPROv2 actually does, and why it ran before the show</div>
+  BootstrapFewShot only selects demonstrations. MIPROv2 searches over two things at once: candidate <b>instructions</b> (it drafts many phrasings, using a bigger model as the proposal writer) and candidate <b>demonstration sets</b>, testing combinations against your metric and keeping the winners; the search is guided so promising combinations get explored first. That thoroughness needs more data and more model calls than a live demo allows, so it was compiled ahead of time, in a few minutes, on a larger 40-example training set with a separate 20-example validation split, then saved. The recipe is <code>scripts/run_miprov2.py</code> in the repo. Crucially, the 10 test examples were never shown to either optimizer.</div>
+
+  <div class="callout ask"><div class="co-title">If someone asks</div>
+  <ul>
+    <li><i>"Why does a written instruction beat demonstrations alone?"</i> Demonstrations teach by pattern, and four examples can only show so many edges. An explicit rule generalizes to cases no demo covered. Best of all, MIPROv2 delivers both at once.</li>
+    <li><i>"How much did compiling cost?"</i> Under a dollar of API calls, about five minutes. The artifact is committed to the repo, so nobody has to rebuild it to run the notebook.</li>
+    <li><i>"Is 100% real?"</i> On these ten held-out examples, at temperature 0, yes and reproducibly. Ten examples is a demo-sized test set; the claim is "it learned the convention," not "it is a perfect classifier."</li>
+  </ul></div>
+</section>
+
+<!-- SCOREBOARD -->
+<section id="scoreboard">
+  <h3 class="cell"><span class="chip">FINALE</span> The scoreboard</h3>
+  <p class="one-liner">One horizontal bar chart: the whole argument in a single picture.</p>
+
+  <div class="codebox"><div class="cb-head">matplotlib scoreboard (abridged: styling details trimmed)</div><pre class="pycode">entries = [
+    ("Plain Predict baseline", baseline_accuracy),
+    ("Hand-tuned prompt", hand_tuned_accuracy),
+    ("DSPy BootstrapFewShot", optimized_accuracy),
+]
+if miprov2_accuracy is not None:
+    entries.append(("DSPy MIPROv2", miprov2_accuracy))
+
+try:
+    import matplotlib.pyplot as plt
+
+    CROP_DUSTER, STARSHIP = "#898781", "#2a78d6"
+    labels = [name for name, _ in entries]
+    values = [acc * 100 for _, acc in entries]
+    colors = [STARSHIP if name.startswith("DSPy") else CROP_DUSTER for name in labels]
+
+    fig, ax = plt.subplots(figsize=(9, 0.9 * len(entries) + 1.2))
+    bars = ax.barh(labels, values, color=colors, height=0.55)
+    # ... labels, gridlines, title: "Same task. Same ten held-out test transmissions." ...
+    plt.show()
+except ImportError:
+    # Text fallback if matplotlib is missing
+    for name, acc in entries:
+        print(f"{name:24s} {'#' * int(acc * 20):20s} {acc*100:.0f}%")</pre></div>
+
+  <div class="callout run"><div class="co-title">What you see when it runs</div>
+  Four horizontal bars. Two gray at 60 (the crop duster: no prompt, and hours of hand-tuning, tied). Two blue at 90 and 100 (the starship: nobody hand-tuned anything). Percentages printed at the bar tips.</div>
+
+  <div class="lines"><table>
+    <tr><th>Piece</th><th>What it is doing</th></tr>
+    <tr><td>entries = [(name, accuracy), ...]</td><td>A list of pairs collected from the four runs. MIPROv2 is appended only if its artifact loaded, so the chart adapts.</td></tr>
+    <tr><td>[name for name, _ in entries]</td><td>A list comprehension: build a new list by walking an old one. The underscore is Python's convention for "there is a second value here and I am ignoring it."</td></tr>
+    <tr><td>try / except ImportError</td><td>If matplotlib is not installed, fall back to a text bar chart made of <code>#</code> characters rather than crashing. Graceful degradation for take-home users.</td></tr>
+    <tr><td>colors = [STARSHIP if name.startswith("DSPy") ...]</td><td>The narrative encoded as color: DSPy entries get talk-blue, everything hand-made gets gray.</td></tr>
+  </table></div>
+
+  <div class="callout why"><div class="co-title">Why gray ties matter as much as blue wins</div>
+  The chart's quiet argument is the TIE at 60: hours of skilled prompt work bought nothing over no prompt at all, because effort cannot fix a wrong guess. The blue bars show what fixes it: data plus a metric plus a search. That is the picture to leave on screen while the point sinks in.</div>
+</section>
+
+<!-- =============== GLOSSARY =============== -->
+<hr class="soft">
+<section id="glossary-dspy">
+  <div class="eyebrow">Reference A</div>
+  <h1 style="font-size:28px;">Glossary: DSPy and LLM terms</h1>
+  <div class="gloss-grid">
+    <dl class="gloss"><dt>artifact</dt><dd>An optimized program saved to a file (here, <code>miprov2_artifact.json</code>): the instruction plus chosen demonstrations as JSON. Load it to restore the optimized behavior exactly, which is also how you deploy.</dd></dl>
+    <dl class="gloss"><dt>baseline</dt><dd>The untuned starting point you measure everything against. Here: plain <code>Predict</code> with no examples, scoring 60%.</dd></dl>
+    <dl class="gloss"><dt>BootstrapFewShot</dt><dd>The fast optimizer. Runs your program on the training set, keeps the examples it gets right (per your metric), and packs them into the prompt as demonstrations. Seconds to run.</dd></dl>
+    <dl class="gloss"><dt>ChainOfThought</dt><dd>A module that instructs the model to reason step by step before answering, automatically adding a <code>reasoning</code> output field. Costs extra tokens; helps on multi-step problems.</dd></dl>
+    <dl class="gloss"><dt>compile</dt><dd>DSPy's word for running an optimizer: <code>optimizer.compile(student=..., trainset=...)</code> returns an improved copy of your program.</dd></dl>
+    <dl class="gloss"><dt>demonstration (demo)</dt><dd>A worked example (input plus correct answer) placed inside the prompt for the model to imitate. What BootstrapFewShot selects and what <code>optimized.demos</code> holds.</dd></dl>
+    <dl class="gloss"><dt>few-shot / zero-shot</dt><dd>Few-shot means the prompt includes worked examples; zero-shot means it includes none. The baseline is zero-shot; the optimized programs are few-shot.</dd></dl>
+    <dl class="gloss"><dt>held-out test set</dt><dd>Labeled examples locked away from the optimizer and used only for final scoring. Keeping them unseen is what makes an accuracy claim honest.</dd></dl>
+    <dl class="gloss"><dt>inspect_history</dt><dd>The x-ray glasses. <code>dspy.inspect_history(n=1)</code> prints the last prompt sent and response received. Your first debugging move in DSPy.</dd></dl>
+    <dl class="gloss"><dt>instruction</dt><dd>The natural-language task description at the top of a generated prompt. Comes from your signature's docstring, until MIPROv2 rewrites it into something better.</dd></dl>
+    <dl class="gloss"><dt>LiteLLM</dt><dd>The adapter library DSPy uses to reach every model provider through one interface. The provider lives in the model string: <code>"anthropic/..."</code>, <code>"openai/..."</code>, <code>"ollama/..."</code>.</dd></dl>
+    <dl class="gloss"><dt>LM (dspy.LM)</dt><dd>A handle to a language model plus its settings (which model, <code>max_tokens</code>, <code>temperature</code>). Set a default once with <code>dspy.configure</code>.</dd></dl>
+    <dl class="gloss"><dt>metric</dt><dd>A function that scores a prediction against a labeled example, returning True/False or 0 to 1. It is your definition of success, and it steers every optimizer.</dd></dl>
+    <dl class="gloss"><dt>MIPROv2</dt><dd>The thorough optimizer. Drafts many candidate instructions (using a bigger model as writer), pairs them with candidate demonstration sets, and searches for the combination that scores best on your metric. Minutes, not seconds; run it offline and save the artifact.</dd></dl>
+    <dl class="gloss"><dt>module</dt><dd>The HOW of a DSPy program: the strategy used to ask the model. <code>Predict</code> asks directly, <code>ChainOfThought</code> reasons first, <code>ReAct</code> uses tools in a loop. All take the same signature.</dd></dl>
+    <dl class="gloss"><dt>optimizer (teleprompter)</dt><dd>Any DSPy component that improves a program using training examples and a metric. Historically called teleprompters, which is why the import path is <code>dspy.teleprompt</code>.</dd></dl>
+    <dl class="gloss"><dt>Predict</dt><dd>The simplest module: turn the signature into a prompt, ask once, parse the reply into output fields.</dd></dl>
+    <dl class="gloss"><dt>Prediction</dt><dd>The object a DSPy call returns. One attribute per output field: <code>result.sentiment</code>, <code>result.urgency</code>, and so on.</dd></dl>
+    <dl class="gloss"><dt>ReAct</dt><dd>Reason plus Act: a module where the model alternates between thinking and calling tools you provide, until it can answer. Named in the talk, not run live.</dd></dl>
+    <dl class="gloss"><dt>signature</dt><dd>The WHAT of a DSPy program: named, typed inputs and outputs, written as a string (<code>"text -&gt; sentiment: str"</code>) or a class. DSPy generates the actual prompt from it.</dd></dl>
+    <dl class="gloss"><dt>temperature</dt><dd>The randomness dial on generation. 0 means deterministic: the same input always yields the same output. Higher values add variety. Demos and evaluations want 0.</dd></dl>
+    <dl class="gloss"><dt>token / max_tokens</dt><dd>Models read and write in tokens, chunks of roughly three quarters of a word. <code>max_tokens</code> caps the response length, bounding cost and latency.</dd></dl>
+    <dl class="gloss"><dt>trainset</dt><dd>The labeled examples handed to the optimizer. Here, 12 examples for the live demo and 40 for the offline MIPROv2 compile.</dd></dl>
+  </div>
+</section>
+
+<section id="glossary-py" style="margin-top:40px;">
+  <div class="eyebrow gold">Reference B</div>
+  <h1 style="font-size:28px;">Glossary: Python bits used in the notebook</h1>
+  <div class="gloss-grid">
+    <dl class="gloss gold"><dt>API key</dt><dd>A secret string that identifies your account to a model provider. Lives in <code>.env</code>, never in code, never on screen.</dd></dl>
+    <dl class="gloss gold"><dt>class</dt><dd>A blueprint for objects. The notebook uses classes two ways: to describe tasks (signatures) and once to wrap the hand-tuned prompt so it can be called like a function.</dd></dl>
+    <dl class="gloss gold"><dt>docstring</dt><dd>The triple-quoted string on the first line of a class or function. Normally documentation; in a DSPy signature it becomes the model's instruction.</dd></dl>
+    <dl class="gloss gold"><dt>.env and dotenv</dt><dd>A plain text file of KEY=value secrets next to your code, loaded at runtime by <code>load_dotenv()</code>. Gitignored, so secrets never reach a repository.</dd></dl>
+    <dl class="gloss gold"><dt>f-string</dt><dd><code>f"Hello {name}"</code>: put an <code>f</code> before the quotes and drop variables into braces. Format specs live after a colon, so <code>{accuracy*100:.0f}</code> means no decimal places.</dd></dl>
+    <dl class="gloss gold"><dt>import / from ... import</dt><dd>Bring a library (or one piece of it) into your program. <code>import dspy</code> loads the whole library; <code>from dotenv import load_dotenv</code> takes one tool out of the box.</dd></dl>
+    <dl class="gloss gold"><dt>keyword argument</dt><dd>Passing a value by name: <code>classify(text="...")</code>. DSPy leans on this so inputs match signature field names exactly.</dd></dl>
+    <dl class="gloss gold"><dt>list / list of objects</dt><dd>An ordered collection in square brackets. The train and test sets are lists of <code>dspy.Example</code> objects.</dd></dl>
+    <dl class="gloss gold"><dt>list comprehension</dt><dd>Build a list in one line by walking another: <code>[name for name, _ in entries]</code>. The underscore means "ignore this value."</dd></dl>
+    <dl class="gloss gold"><dt>raise RuntimeError</dt><dd>Stop the program on purpose with a readable message. Better a clear failure at setup than a confusing one later.</dd></dl>
+    <dl class="gloss gold"><dt>SimpleNamespace</dt><dd>A bare-bones object you can hang attributes on: <code>SimpleNamespace(urgency="urgent").urgency</code>. Used to make the hand-tuned wrapper's output look like a DSPy Prediction.</dd></dl>
+    <dl class="gloss gold"><dt>try / except</dt><dd>Attempt something that might fail; if the named error happens, run the fallback instead of crashing. The scoreboard uses it to survive a missing matplotlib.</dd></dl>
+    <dl class="gloss gold"><dt>type hint</dt><dd>The <code>: str</code> or <code>: int</code> after a name, labeling what kind of value it holds. In DSPy signatures, hints tell the parser what to convert model output into.</dd></dl>
+    <dl class="gloss gold"><dt>with statement</dt><dd>Creates a temporary context that cleans up after itself. <code>with dspy.context(lm=big):</code> swaps the model inside the block and restores the default automatically when the block ends.</dd></dl>
+    <dl class="gloss gold"><dt>__call__</dt><dd>A special method that lets an object be used like a function: defining it is why <code>hand_tuned(transmission)</code> works. Pronounced "dunder call."</dd></dl>
+  </div>
+</section>
+
+<hr class="soft">
+<p class="tip">Companion to dspy_starship_01.ipynb &middot; From Crop Duster to Starship &middot; PyHou, July 21 2026 &middot; Ahliana Byrd</p>
+
+</main>
+</div>
+
+<script>
+  // Minimal Python highlighter: strings and comments first, then keywords in the gaps.
+  (function () {
+    var STR_OR_COMMENT = /("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|#[^\n]*)/g;
+    var KW = /\b(def|class|import|from|return|if|elif|else|for|in|with|as|raise|try|except|not|and|or|is|None|True|False|lambda|print)\b/g;
+    function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    document.querySelectorAll("pre.pycode").forEach(function (pre) {
+      var src = pre.textContent;
+      var out = "", last = 0, m;
+      STR_OR_COMMENT.lastIndex = 0;
+      while ((m = STR_OR_COMMENT.exec(src)) !== null) {
+        out += esc(src.slice(last, m.index)).replace(KW, '<span class="tok-k">$1</span>');
+        var cls = m[0].charAt(0) === "#" ? "tok-c" : "tok-s";
+        out += '<span class="' + cls + '">' + esc(m[0]) + "</span>";
+        last = m.index + m[0].length;
+      }
+      out += esc(src.slice(last)).replace(KW, '<span class="tok-k">$1</span>');
+      pre.innerHTML = out;
+    });
+  })();
+</script>
+</body>
+</html>

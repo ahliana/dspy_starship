@@ -9,6 +9,7 @@ Talk delivered at PyHou on July 21, 2026. This repo is the take-home artifact.
 | File | What it is |
 |---|---|
 | `dspy_starship_01.ipynb` | The notebook that IS the talk, walked through live. Fully annotated for self-study. Start here |
+| `guide.html` | The cell-by-cell guide: every notebook cell explained for DSPy newcomers, plus a glossary. Open in a browser |
 | `METHOD.md` | The workflow write-up. This is the "method" take-home |
 | `slides.html` | The 10-slide deck, self-contained. Open in a browser, F11, arrow keys |
 | `backups/full_demo.ipynb` | Pre-executed copy with all outputs, the offline fallback |

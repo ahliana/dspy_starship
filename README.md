@@ -8,8 +8,6 @@ Talk delivered at PyHou on July 21, 2026. This repo is the take-home artifact.
 
 | File | What it is |
 |---|---|
-| `TIMELINE.md` | The locked 40-minute talk breakdown plus 10 min Q&A |
-| `SPEAKER_NOTES.md` | What to say at each cell and slide |
 | `dspy_starship_01.ipynb` | The notebook that IS the talk, walked through live. Fully annotated for self-study. Start here |
 | `METHOD.md` | The workflow write-up. This is the "method" take-home |
 | `slides.html` | The 10-slide deck, self-contained. Open in a browser, F11, arrow keys |

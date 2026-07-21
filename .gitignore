@@ -1,6 +1,8 @@
 .env
 CATCHUP.md
 CLAUDE.md
+TIMELINE.md
+SPEAKER_NOTES.md
 __pycache__/
 *.pyc
 .ipynb_checkpoints/

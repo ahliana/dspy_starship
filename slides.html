@@ -172,6 +172,13 @@
   .qr-url   { margin-top: 1vh; font-size: clamp(12px, 1.8vh, 20px); color: var(--muted); font-family: var(--mono); word-break: normal; }
   .thanks { display: flex; flex-direction: column; gap: 1vh; font-size: clamp(22px, 3.6vh, 46px); }
   .thanks b { font-weight: 800; }
+  .panel-title { font-size: clamp(22px, 3.6vh, 46px); font-weight: 800; }
+  .panel-list { list-style: none; margin-top: 1vh; display: flex; flex-direction: column; gap: 1vh; }
+  .panel-list li {
+    font-size: clamp(19px, 3.1vh, 40px); color: var(--ink-2); line-height: 1.3;
+    display: flex; gap: 0.65em; align-items: baseline;
+  }
+  .panel-list li::before { content: "\25B8"; color: var(--wheat-deep); font-weight: 700; }
 
   .notice {
     border-top: 1px solid var(--hair); padding-top: 2.2vh;
@@ -425,7 +432,7 @@
     <div class="col">
       <div class="kicker gold">The old way</div>
       <h2>Who has hand-tuned a prompt for hours?</h2>
-      <div class="sub">That is the crop duster. Low altitude, exhausting, and every model release wipes out your work.</div>
+      <div class="sub">That's the crop duster. Low altitude, exhausting, and every model release wipes out your work.</div>
     </div>
     <div class="art-col">
       <!-- low, repetitive passes over the field -->
@@ -446,7 +453,7 @@
   <div class="kicker">Declare</div>
   <div class="codeblock">dspy.<span class="fn">Predict</span>(<span class="str">"text -&gt; sentiment: str"</span>)</div>
   <div class="big">The whole program.</div>
-  <div class="big punch">I did not write a prompt.</div>
+  <div class="big punch">I didn't write a prompt.</div>
 </section>
 
 <!-- ===== SLIDE 5: Partner activity ===== -->
@@ -477,7 +484,7 @@
 <section class="slide">
   <div class="kicker">Tune</div>
   <h2>The library writes better prompts than you do.</h2>
-  <div class="big punch">I will prove it. Live. On a metric.</div>
+  <div class="big punch">I'll prove it. Live. On a metric.</div>
 </section>
 
 <!-- ===== SLIDE 8: Debrief ===== -->
@@ -490,8 +497,13 @@
     <li><b>Arize Phoenix</b> for observability &middot; <b>MCP</b> for tool interop &middot; <b>pydantic-ai</b> as a DSPy cousin</li>
     <li><b>uv + ruff</b> for Python plumbing &middot; <b>Claude Code</b> for terminal work</li>
   </ul>
-  <div class="panelbox big">
-    <b>Connection minute:</b> introduce yourself to the person on your right. Trade LinkedIn. Name one thing you want to build with DSPy.
+  <div class="panelbox">
+    <div class="panel-title">Connection minute</div>
+    <ul class="panel-list">
+      <li>Introduce yourself to the person on your right</li>
+      <li>Trade LinkedIn</li>
+      <li>Name one thing you want to build with DSPy</li>
+    </ul>
   </div>
 </section>
 
@@ -513,6 +525,7 @@
   <div class="kicker">Thank you</div>
   <h2>Questions?</h2>
   <div class="thanks">
+    <div><b>Ahliana Byrd</b> &middot; Ascentra</div>
     <div><b>Dillon</b> &middot; PyTexas</div>
     <div><b>Danyal</b> &middot; Improving</div>
   </div>
